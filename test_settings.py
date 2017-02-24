@@ -53,9 +53,9 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
-        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': TEMPLATE_CONTEXT_PROCESSORS,
+            'loaders': TEMPLATE_LOADERS,
         },
     },
 ]
@@ -70,3 +70,5 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'test_collectstatic')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'test_media')
 
 USE_TZ = True
+
+SILENCED_SYSTEM_CHECKS = ['1_8.W001']
