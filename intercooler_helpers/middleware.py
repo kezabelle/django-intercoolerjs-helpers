@@ -15,7 +15,31 @@ except ImportError:  # < Django 1.10
         pass
 
 
-__all__ = ['IntercoolerMiddleware']
+__all__ = ['IntercoolerMiddleware', 'HttpMethodOverride']
+
+
+class HttpMethodOverride(MiddlewareMixin):
+    """
+    Support for X-HTTP-Method-Override and _method=PUT style request method
+    changing.
+
+    Note: if https://pypi.python.org/pypi/django-method-override gets updated
+    with support for newer Django (ie: implements MiddlewareMixin), without
+    dropping older versions, I could possibly replace this with that.
+    """
+    def process_request(self, request):
+        request.changed_method = False
+        if request.method != 'POST':
+            return
+        methods = {'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'}
+        potentials = ((request.GET, '_method'),
+                      (request.META, 'HTTP_X_HTTP_METHOD_OVERRIDE'))
+        for querydict, key in potentials:
+            if key in querydict and querydict[key].upper() in methods:
+                request.original_method = request.method
+                request.method = querydict[key].upper()
+                request.changed_method = True
+                return
 
 
 def _maybe_intercooler(self):
@@ -32,18 +56,6 @@ def _mutate_querydict(qd):
     yield qd
     qd._mutable = False
 
-
-class HttpMethodChange(namedtuple('HttpMethodChange', 'original target')):
-    def should_change(self):
-        return self.original != self.target
-
-
-def maybe_change_http_method(request):
-    methods = ('GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS')
-    if '_method' in request.GET and request.GET['_method'].upper() in methods:
-        request.original_method = request.method
-        return HttpMethodChange(request.method, request.GET['_method'].upper())
-    return HttpMethodChange(request.method, request.method)
 
 NameId = namedtuple('NameId', 'name id')
 
@@ -74,7 +86,6 @@ class IntercoolerQueryDict(QueryDict):
     def trigger(self):
         return NameId(self.get('ic-trigger-name', None), self.get('ic-trigger-id', None))
 
-
     @property
     def prompt_value(self):
         return self.get('ic-prompt-value', None)
@@ -104,7 +115,8 @@ def intercooler_data(self):
             for key in ('ic-request', '_method'):
                 ic_request = GET.get(key)
                 IC_DATA.update({key: ic_request})
-            # This key should always exist on any intercooler request,
+            # If HttpMethodOverride is in the middleware stack, this may
+            # return True.
             IC_DATA.changed_method = getattr(self, 'changed_method', False)
         self._processed_intercooler_data = ic_qd
     return self._processed_intercooler_data
@@ -114,13 +126,4 @@ class IntercoolerMiddleware(MiddlewareMixin):
     def process_request(self, request):
         request.maybe_intercooler = _maybe_intercooler.__get__(request)
         request.is_intercooler = _is_intercooler.__get__(request)
-        request._intercooler_data = intercooler_data.__get__(request)
-        request.intercooler_data = SimpleLazyObject(request._intercooler_data)
-        # If Intercooler sent a request, and used the _method=XXX to indicate
-        # a PUT/PATCH etc ... change it.
-        if request.is_intercooler():
-            method = maybe_change_http_method(request)
-            if method.should_change():
-                request.original_method = method.original
-                request.method = method.target
-                request.changed_method = True
+        request.intercooler_data = SimpleLazyObject(intercooler_data.__get__(request))

@@ -1,22 +1,29 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 import pytest
-from intercooler_helpers.middleware import IntercoolerMiddleware
+from intercooler_helpers.middleware import (IntercoolerMiddleware,
+                                            HttpMethodOverride)
 
 
 @pytest.fixture
 def ic_mw():
     return IntercoolerMiddleware()
 
+@pytest.fixture
+def http_method_mw():
+    return HttpMethodOverride()
+
 
 @pytest.mark.parametrize("method", [
     "maybe_intercooler",
     "is_intercooler",
     "intercooler_data",
+    "_processed_intercooler_data",
 ])
 def test_methods_dont_exist_on_class_only_on_instance(rf, ic_mw, method):
     request = rf.get('/')
     ic_mw.process_request(request)
+    assert request.intercooler_data.id == 0
     assert hasattr(request, method) is True
     assert hasattr(request.__class__, method) is False
 
@@ -65,14 +72,32 @@ def test_intercooler_data(rf, ic_mw):
     assert data.trigger == ('triggered_by_html_name', 'triggered_by_id')
     assert data.prompt_value == 'undocumented'
     assert data._mutable is False
-    assert data.changed_method is True
     assert data.dict() == querystring_data
     # ensure that after calling the property (well, SimpleLazyObject)
     # the request has cached the data structure to an attribute.
     request._processed_intercooler_data
 
+
+
+def test_http_method_override_via_querystring(rf, http_method_mw):
+    request = rf.post('/?_method=patch', HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    http_method_mw.process_request(request)
     assert request.changed_method is True
-    assert request.method == 'POST'
-    assert request.original_method == 'GET'
-    # everything else should be consumed into the IC querydict.
-    assert set(request.GET.keys()) == {'ic-request', '_method'}
+    assert request.method == 'PATCH'
+    assert request.original_method == 'POST'
+
+
+def test_http_method_override_via_header(rf, http_method_mw):
+    request = rf.post('/', HTTP_X_HTTP_METHOD_OVERRIDE='patch')
+    http_method_mw.process_request(request)
+    assert request.changed_method is True
+    assert request.method == 'PATCH'
+    assert request.original_method == 'POST'
+
+
+def test_intercooler_querydict_copied_change_method_from_request(rf, http_method_mw, ic_mw):
+    request = rf.post('/?_method=patch', HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    http_method_mw.process_request(request)
+    ic_mw.process_request(request)
+    assert request.changed_method is True
+    assert request.intercooler_data.changed_method is True
