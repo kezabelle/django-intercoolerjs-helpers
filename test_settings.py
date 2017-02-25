@@ -64,6 +64,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'intercooler_helpers.middleware.IntercoolerMiddleware',
 )
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'test_collectstatic')

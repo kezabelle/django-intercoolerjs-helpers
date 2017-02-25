@@ -3,3 +3,4 @@ dist
 *.pyo
 *.pyc.coverage
 *.egg*
+*.sqlite3
