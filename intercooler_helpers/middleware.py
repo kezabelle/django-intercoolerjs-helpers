@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from types import MethodType
 
 from django.http import QueryDict
+from django.utils.functional import SimpleLazyObject
 
 try:
     from django.utils.deprecation import MiddlewareMixin
@@ -111,9 +112,10 @@ def intercooler_data(self):
 
 class IntercoolerMiddleware(MiddlewareMixin):
     def process_request(self, request):
-        request.maybe_intercooler = MethodType(_maybe_intercooler, request)
-        request.is_intercooler = MethodType(_is_intercooler, request)
-        request.intercooler_data = MethodType(intercooler_data, request)
+        request.maybe_intercooler = _maybe_intercooler.__get__(request)
+        request.is_intercooler = _is_intercooler.__get__(request)
+        request._intercooler_data = intercooler_data.__get__(request)
+        request.intercooler_data = SimpleLazyObject(request._intercooler_data)
         # If Intercooler sent a request, and used the _method=XXX to indicate
         # a PUT/PATCH etc ... change it.
         if request.is_intercooler():

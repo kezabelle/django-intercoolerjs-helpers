@@ -53,7 +53,10 @@ def test_intercooler_data(rf, ic_mw):
     }
     request = rf.get('/', data=querystring_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
     ic_mw.process_request(request)
-    data = request.intercooler_data()
+    # Before running, this attribute should not exist.
+    with pytest.raises(AttributeError):
+        request._processed_intercooler_data
+    data = request.intercooler_data
     assert data.current_url == '/lol/'
     assert data.element == ('html_name', 'html_id')
     assert data.id == 3
@@ -64,6 +67,9 @@ def test_intercooler_data(rf, ic_mw):
     assert data._mutable is False
     assert data.changed_method is True
     assert data.dict() == querystring_data
+    # ensure that after calling the property (well, SimpleLazyObject)
+    # the request has cached the data structure to an attribute.
+    request._processed_intercooler_data
 
     assert request.changed_method is True
     assert request.method == 'POST'
