@@ -69,4 +69,4 @@ def test_intercooler_data(rf, ic_mw):
     assert request.method == 'POST'
     assert request.original_method == 'GET'
     # everything else should be consumed into the IC querydict.
-    assert tuple(request.GET.keys()) == ('ic-request', '_method')
+    assert set(request.GET.keys()) == {'ic-request', '_method'}
