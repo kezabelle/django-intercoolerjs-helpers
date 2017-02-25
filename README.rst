@@ -1,14 +1,14 @@
 django-intercooler_helpers
-================================
+==========================
 
 :author: Keryn Knight
 :version: 0.1.0
 
-.. |travis_stable| image:: https://travis-ci.org/kezabelle/django-intercooler_helpers.svg?branch=0.1.0
-  :target: https://travis-ci.org/kezabelle/django-intercooler_helpers
+.. |travis_stable| image:: https://travis-ci.org/kezabelle/django-intercoolerjs-helpers.svg?branch=0.1.0
+  :target: https://travis-ci.org/kezabelle/django-intercoolerjs-helpers
 
-.. |travis_master| image:: https://travis-ci.org/kezabelle/django-intercooler_helpers.svg?branch=master
-  :target: https://travis-ci.org/kezabelle/django-intercooler_helpers
+.. |travis_master| image:: https://travis-ci.org/kezabelle/django-intercoolerjs-helpers.svg?branch=master
+  :target: https://travis-ci.org/kezabelle/django-intercoolerjs-helpers
 
 ==============  ======
 Release         Status
