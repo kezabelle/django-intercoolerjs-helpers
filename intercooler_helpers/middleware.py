@@ -43,7 +43,7 @@ class HttpMethodOverride(MiddlewareMixin):
 
 
 def _maybe_intercooler(self):
-    return 'ic-request' in self.GET
+    return self.META.get('HTTP_X_IC_REQUEST') == 'true'
 
 
 def _is_intercooler(self):
@@ -95,7 +95,7 @@ def intercooler_data(self):
     if not hasattr(self, '_processed_intercooler_data'):
         IC_KEYS = ['ic-current-url', 'ic-element-id', 'ic-element-name',
                    'ic-id', 'ic-prompt-value', 'ic-target-id',
-                   'ic-trigger-id', 'ic-trigger-name']
+                   'ic-trigger-id', 'ic-trigger-name', 'ic-request']
         ic_qd = IntercoolerQueryDict('', encoding=self.encoding)
         with _mutate_querydict(ic_qd) as IC_DATA:
             # For a little while, we need to pop data out of request.GET
@@ -109,12 +109,10 @@ def intercooler_data(self):
                         except IndexError:
                             removed = []
                         IC_DATA.update({ic_key: removed})
-            # Don't pop these ones off, so that maybe_intercooler can be called
-            # subsequent to consuming the IC data, and so that decisions
-            # can be made for handling _method
-            for key in ('ic-request', '_method'):
-                ic_request = GET.get(key)
-                IC_DATA.update({key: ic_request})
+            # Don't pop these ones off, so that decisions can be made for
+            # handling _method
+            ic_request = GET.get('_method')
+            IC_DATA.update({'_method': ic_request})
             # If HttpMethodOverride is in the middleware stack, this may
             # return True.
             IC_DATA.changed_method = getattr(self, 'changed_method', False)
