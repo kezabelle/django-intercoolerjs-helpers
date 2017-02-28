@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+<h3>A quick click</h3>
+<p>This anchor tag POSTs to <code>{% url 'click' %}</code> when it is clicked.</p>
+<a id="intro-btn" class="btn btn-primary" ic-transition-duration="250ms" ic-post-to="{% url 'click' %}"><span>Click Me!</span></a>
+<a id="intro-btn2" class="btn btn-default" ic-transition-duration="250ms" ic-get-from="{% url 'click' %}" ic-target="#intro-btn"><span>Reset counter</span></a>
+</div>
+<hr>
+<div class="container">
+<h3>Handling client-side redirection on server-side redirects</h3>
+<p>This anchor tag GETs from <code>{% url 'redirector' %}</code> when it is clicked.</p>
+<h4>Explanation</h4>
+<ul>
+    <li>Makes use of the <code>intercooler_helpers.middleware.IntercoolerRedirector</code>
+        to turn standard Django redirects (<code>301</code> and <code>302</code>) into Intercooler compatible client-side ones.</li>
+</ul>
+<a id="redirector-btn" class="btn btn-primary" ic-transition-duration="250ms" ic-get-from="{% url 'redirector' %}" href="{% url 'redirector' %}"><span>Click me to do a client-side redirect</span></a>
+</div>
+<hr>
+<div class="container">
+<h3><a href="{% url 'polling' %}">A Pause/Play UI</a></h3>
+<p>This demo shows how to set up a list that is appended to periodically and that can be paused and resumed</p>
+<h4>Explanation</h4>
+<ul>
+    <li>
+      A div polls the <code>{% url 'polling' %}</code> url every two seconds by using the
+      <code>ic-prepend-from</code> and
+      <code>ic-poll</code> attributes, and prepends the results
+      into an inner div using the
+      <code>ic-target</code>
+      attribute.
+    </li>
+    <li>
+      Two inner divs post to the server using the
+      <code>ic-post-to</code>
+      attribute and update their respective parent div.  The server either starts or stops polling by using
+      the <code>X-IC-ResumePolling</code> or <code>X-IC-CancelPolling</code> response headers, respectively.
+    </li>
+  </ul>
+{% include "polling_include.html" %}
+</div>
+<hr>
+
+<div class="container">
+<h3><a href="{% url 'infinite_scrolling' %}">Implementing Infinite Scrolling</a></h3>
+<p>This example demos an infinite scroll UI.</p>
+<h4>Explanation</h4>
+<ul>
+    <li>
+      The last table row of the table generated on the server side, has an
+      <code>ic-append-from</code>
+      attribute that loads the next page of results, and that uses
+      <code>ic-trigger-on</code>
+      to trigger the request when the row is scrolled into view.  The row targets the body of the table to
+      append to using the
+      <code>ic-target</code>
+      attribute and shows an indicator for the request via the
+      <code>ic-indicator</code>
+      attribute.
+    </li>
+  </ul>
+{% include "infinite_scrolling_include.html" %}
+</div>
+
+<hr>
+
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% comment %}
+This template only exists so that if you go to /polling/ you get a
+full valid HTML response.
+It is otherwise unused.
+Progressive enhancement!
+{% endcomment %}
+
+{% block content %}
+{% include "polling_include.html" %}
+{% endblock %}
+

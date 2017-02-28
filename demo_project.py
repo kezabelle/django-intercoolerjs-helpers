@@ -4,14 +4,19 @@ from __future__ import absolute_import
 import os
 import sys
 sys.dont_write_bytecode = True
-MISSING_DEPENDENCY = False
+MISSING_DEPENDENCIES = []
 try:
     from django.conf import settings
 except ImportError:
-    sys.stdout.write("You'll need to `pip install Django` to run this demo\n")
-    MISSING_DEPENDENCY = True
+    MISSING_DEPENDENCIES.append("Django")
+try:
+    import intercoolerjs
+except ImportError:
+    MISSING_DEPENDENCIES.append("django-intercoolerjs")
 
-if MISSING_DEPENDENCY:
+if MISSING_DEPENDENCIES:
+    deps = " ".join(MISSING_DEPENDENCIES)
+    sys.stdout.write("You'll need to `pip install {}` to run this demo\n".format(deps))
     sys.exit(1)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "test_settings")

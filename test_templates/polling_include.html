@@ -1,0 +1,8 @@
+<div ic-prepend-from="{% url 'polling' %}" ic-poll="2s" ic-target="#polling-content">
+    <div ic-target="this">
+      <div class="btn btn-default" ic-post-to="{% url 'polling_start' %}">Play</div>
+      <div class="btn btn-default" ic-post-to="{% url 'polling_stop' %}">Pause</div>
+    </div>
+    <div id="polling-content" ic-limit-children="5">
+    </div>
+</div>

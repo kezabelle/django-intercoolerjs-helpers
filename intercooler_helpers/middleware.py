@@ -5,7 +5,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 from types import MethodType
 
-from django.http import QueryDict
+from django.http import QueryDict, HttpResponse
 from django.utils.functional import SimpleLazyObject
 
 try:
@@ -125,3 +125,20 @@ class IntercoolerMiddleware(MiddlewareMixin):
         request.maybe_intercooler = _maybe_intercooler.__get__(request)
         request.is_intercooler = _is_intercooler.__get__(request)
         request.intercooler_data = SimpleLazyObject(intercooler_data.__get__(request))
+
+
+
+class IntercoolerRedirector(MiddlewareMixin):
+    def process_response(self, request, response):
+        if not request.is_intercooler():
+            return response
+        if response.status_code > 300 and response.status_code < 400:
+            if response.has_header('Location'):
+                url = response['Location']
+                del response['Location']
+                new_resp = HttpResponse()
+                for k, v in response.items():
+                    new_resp[k] = v
+                new_resp['X-IC-Redirect'] = url
+                return new_resp
+        return response

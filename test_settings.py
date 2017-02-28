@@ -4,7 +4,7 @@ import os
 
 DEBUG = os.environ.get('DEBUG', 'on') == 'on'
 SECRET_KEY = os.environ.get('SECRET_KEY', 'TESTTESTTESTTESTTESTTESTTESTTEST')
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,testserver').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,testserver,*').split(',')
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
 DATABASES = {
@@ -15,12 +15,12 @@ DATABASES = {
 }
 
 INSTALLED_APPS = [
-    'django.contrib.sites',
     'django.contrib.sessions',
     'django.contrib.contenttypes',
+    'django.contrib.admin',
     'django.contrib.staticfiles',
     'django.contrib.auth',
-    'django.contrib.admin',
+    'intercoolerjs',
     'intercooler_helpers',
 ]
 
@@ -47,12 +47,11 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
 )
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, "test_templates")],
         'OPTIONS': {
             'context_processors': TEMPLATE_CONTEXT_PROCESSORS,
             'loaders': TEMPLATE_LOADERS,
@@ -66,6 +65,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'intercooler_helpers.middleware.HttpMethodOverride',
     'intercooler_helpers.middleware.IntercoolerMiddleware',
+    'intercooler_helpers.middleware.IntercoolerRedirector',
 )
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'test_collectstatic')

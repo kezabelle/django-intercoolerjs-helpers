@@ -1,0 +1,5 @@
+<tr {% if forloop.last %}ic-append-from="{% url 'infinite_scrolling' %}" ic-trigger-on="scrolled-into-view" ic-target="#contactTableBody" ic-indicator="#indicator" ic-select-from-response="#contactTableBody"{% endif %}>
+    <td style="background-color: #{{ row|slice:":6" }}; width: 1rem;">&nbsp;</td>
+    <td>Row #{{ forloop.counter }}</td>
+    <td style="color: #{{ row|slice:":6" }};">{{ row }}</td>
+</tr>

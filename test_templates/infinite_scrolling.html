@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% comment %}
+This template only exists so that if you go to /infinite/scrolling/ you get a
+full valid HTML response.
+It is otherwise unused.
+Progressive enhancement!
+{% endcomment %}
+
+{% block content %}
+{% include "infinite_scrolling_include.html" %}
+{% endblock %}

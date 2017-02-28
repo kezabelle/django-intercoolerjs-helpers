@@ -1,0 +1,15 @@
+<table class="table">
+    <thead>
+    <tr>
+        <th style="width: 1rem;">&nbsp;</th>
+        <th># of generated response</th>
+        <th>UUID</th>
+    </tr>
+    </thead>
+    <tbody id="contactTableBody">
+    {% for row in rows %}
+    {% include "infinite_scrolling_partial.html" with row=row forloop=forloop only %}
+    {% endfor %}
+    </tbody>
+</table>
+<span id="indicator">Loading</span>
