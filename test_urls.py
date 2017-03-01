@@ -9,7 +9,10 @@ from django.http import HttpResponse, Http404
 from django.shortcuts import redirect
 from django.template.defaultfilters import pluralize
 from django.template.response import TemplateResponse
-from django.urls import reverse
+try:
+    from django.urls import reverse
+except ImportError:  # Django <1.10
+    from django.core.urlresolvers import reverse
 
 
 def _page_data():

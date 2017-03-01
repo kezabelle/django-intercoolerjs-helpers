@@ -5,8 +5,10 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from django.http import QueryDict, HttpResponse
-from django.urls import Resolver404
-from django.urls import resolve
+try:
+    from django.urls import Resolver404, resolve
+except ImportError:  # Django <1.10
+    from django.core.urlresolvers import Resolver404, resolve
 from django.utils.functional import SimpleLazyObject
 from django.utils.six.moves.urllib.parse import urlparse
 try:
