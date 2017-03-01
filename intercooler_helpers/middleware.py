@@ -6,8 +6,10 @@ from contextlib import contextmanager
 from types import MethodType
 
 from django.http import QueryDict, HttpResponse
+from django.urls import Resolver404
+from django.urls import resolve
 from django.utils.functional import SimpleLazyObject
-
+from django.utils.six.moves.urllib.parse import urlparse
 try:
     from django.utils.deprecation import MiddlewareMixin
 except ImportError:  # < Django 1.10
@@ -58,12 +60,25 @@ def _mutate_querydict(qd):
 
 
 NameId = namedtuple('NameId', 'name id')
+UrlMatch = namedtuple('UrlMatch', 'url match')
 
 
 class IntercoolerQueryDict(QueryDict):
     @property
-    def current_url(self):
-        return self.get('ic-current-url', None)
+    def url(self):
+        url = self.get('ic-current-url', None)
+        match = None
+        if url is not None:
+            url = url.strip()
+            url = urlparse(url)
+            if url.path:
+                try:
+                    match = resolve(url.path)
+                except Resolver404:
+                    pass
+        return UrlMatch(url, match)
+
+    current_url = url
 
     @property
     def element(self):

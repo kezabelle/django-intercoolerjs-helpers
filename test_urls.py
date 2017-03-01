@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 
-import threading
 from uuid import uuid4
 
 from django.conf.urls import url
@@ -22,11 +21,14 @@ clicktrack = 0
 def click(request):
     global clicktrack
     clicktrack += 1
-    if request.method == "GET":
+    do_reset = (request.is_intercooler() and
+                request.intercooler_data.element.id == 'intro-btn2' and
+                request.intercooler_data.current_url.match is not None)
+    if do_reset:
         clicktrack = 0
     time = pluralize(clicktrack)
     text = "<span>You clicked me {} time{}...</span>".format(clicktrack, time)
-    if request.method == "GET":
+    if do_reset:
         text = "<span>You reset the counter!, via {}</span>".format(request.intercooler_data.trigger.id)
     if not request.is_intercooler():
         raise Http404("Not allowed to come here outside of an Intercooler.js request!")

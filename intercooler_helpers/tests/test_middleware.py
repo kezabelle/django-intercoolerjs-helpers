@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
+
+from django.utils.six.moves.urllib.parse import urlparse
+
 import pytest
 from intercooler_helpers.middleware import (IntercoolerMiddleware,
                                             HttpMethodOverride)
@@ -70,7 +73,8 @@ def test_intercooler_data(rf, ic_mw):
     with pytest.raises(AttributeError):
         request._processed_intercooler_data
     data = request.intercooler_data
-    assert data.current_url == '/lol/'
+    url = urlparse('/lol/')
+    assert request.intercooler_data.current_url == (url, None)
     assert data.element == ('html_name', 'html_id')
     assert data.id == 3
     assert data.request is True
@@ -103,7 +107,8 @@ def test_intercooler_data_removes_data_from_GET(rf, ic_mw):
     request = rf.get('/', data=querystring_data, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
     ic_mw.process_request(request)
     assert len(request.GET) == 10
-    assert request.intercooler_data.current_url == '/lol/'
+    url = urlparse('/lol/')
+    assert request.intercooler_data.current_url == (url, None)
     # After evaluation, only _method should be left.
     assert len(request.GET) == 1
 
