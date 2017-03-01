@@ -20,6 +20,19 @@
 </div>
 <hr>
 <div class="container">
+<h3><a href="{% url 'form' %}">Form handling</a></h3>
+<p>This demo shows how to do AJAX validation & submission of a form, without doing a full page redirect.</p>
+<h4>Explanation</h4>
+<ul>
+    <li>A form is decorated with <code>ic-post-to</code> to replace the normal <code>action="..."</code></li>
+    <li>The response from the server is a full HTML page (the same one is visible if you navigate to <a href="{% url 'form' %}">{% url 'form' %}</a> and submit)</li>
+    <li><code>ic-select-from-response</code> is used to pluck out the <code>#example-form</code> to replace the form on error.</li>
+    <li>Makes use of the <code>intercooler_helpers.middleware.IntercoolerRedirector</code> to redirect on success</li>
+</ul>
+{% include "form_include.html" %}
+</div>
+<hr>
+<div class="container">
 <h3><a href="{% url 'polling' %}">A Pause/Play UI</a></h3>
 <p>This demo shows how to set up a list that is appended to periodically and that can be paused and resumed</p>
 <h4>Explanation</h4>

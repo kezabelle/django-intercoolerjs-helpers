@@ -5,6 +5,7 @@ import threading
 from uuid import uuid4
 
 from django.conf.urls import url
+from django.forms import Form, CharField, IntegerField
 from django.http import HttpResponse, Http404
 from django.shortcuts import redirect
 from django.template.defaultfilters import pluralize
@@ -39,6 +40,21 @@ def redirector(request):
 
 def redirected(request):
     return TemplateResponse(request, template="redirected.html", context={})
+
+
+class TestForm(Form):
+    field = CharField()
+    number = IntegerField(max_value=10, min_value=5)
+
+
+def form(request):
+    template = "form.html"
+    _form = TestForm(request.POST or None)
+    if _form.is_valid():
+        return redirect(reverse('redirected'))
+    context = {'form': _form}
+    return TemplateResponse(request, template=template, context=context)
+
 
 
 def polling_stop(request):
@@ -77,11 +93,13 @@ def root(request):
     template = "demo_project.html"
     context = {
         'rows': _page_data(),
+        'form': TestForm()
     }
     return TemplateResponse(request, template=template, context=context)
 
 
 urlpatterns = [
+    url('^form/$', form, name='form'),
     url('^redirector/redirected/$', redirected, name='redirected'),
     url('^redirector/$', redirector, name='redirector'),
     url('^click/$', click, name='click'),

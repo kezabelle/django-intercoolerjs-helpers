@@ -1,0 +1,4 @@
+<form action="{% url 'form' %}" method="POST" accept-charset="utf-8" autocomplete="off" novalidate id="example-form" ic-post-to="{% url 'form' %}" ic-select-from-response="#example-form">
+    {{ form.as_p }}
+    <input type="submit" class="btn btn-primary" value="Send">
+</form>
