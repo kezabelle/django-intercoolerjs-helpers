@@ -4,8 +4,8 @@
 <div class="container">
 <h3>A quick click</h3>
 <p>This anchor tag POSTs to <code>{% url 'click' %}</code> when it is clicked.</p>
-<a id="intro-btn" class="btn btn-primary" ic-transition-duration="250ms" ic-post-to="{% url 'click' %}"><span>Click Me!</span></a>
-<a id="intro-btn2" class="btn btn-default" ic-transition-duration="250ms" ic-get-from="{% url 'click' %}" ic-target="#intro-btn"><span>Reset counter</span></a>
+<a id="intro-btn" class="btn btn-primary" ic-post-to="{% url 'click' %}"><span>Click Me!</span></a>
+<a id="intro-btn2" class="btn btn-default" ic-patch-to="{% url 'click' %}" ic-target="#intro-btn"><span>Reset counter</span></a>
 </div>
 <hr>
 <div class="container">

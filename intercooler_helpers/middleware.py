@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 
 from collections import namedtuple
 from contextlib import contextmanager
-from types import MethodType
 
 from django.http import QueryDict, HttpResponse
 from django.urls import Resolver404
@@ -34,12 +33,23 @@ class HttpMethodOverride(MiddlewareMixin):
         if request.method != 'POST':
             return
         methods = {'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'}
-        potentials = ((request.GET, '_method'),
-                      (request.META, 'HTTP_X_HTTP_METHOD_OVERRIDE'))
+        potentials = ((request.META, 'HTTP_X_HTTP_METHOD_OVERRIDE'),
+                      (request.GET, '_method'),
+                      (request.POST, '_method'))
         for querydict, key in potentials:
             if key in querydict and querydict[key].upper() in methods:
+                newmethod = querydict[key].upper()
+                # Don't change the method data if the calling method was
+                # the same as the indended method.
+                if newmethod == request.method:
+                    return
                 request.original_method = request.method
-                request.method = querydict[key].upper()
+                if hasattr(querydict, '_mutable'):
+                    with _mutate_querydict(querydict):
+                        querydict.pop(key)
+                if not hasattr(request, newmethod):
+                    setattr(request, newmethod, request.POST)
+                request.method = newmethod
                 request.changed_method = True
                 return
 
@@ -105,6 +115,14 @@ class IntercoolerQueryDict(QueryDict):
     def prompt_value(self):
         return self.get('ic-prompt-value', None)
 
+    def __repr__(self):
+        props = ('id', 'request', 'target_id', 'element', 'trigger',
+                 'prompt_value', 'url')
+        attrs = ['{name!s}={val!r}'.format(name=prop, val=getattr(self, prop))
+                 for prop in props]
+        return "<{cls!s}: {attrs!s}>".format(cls=self.__class__.__name__,
+                                             attrs=", ".join(attrs))
+
 
 def intercooler_data(self):
     if not hasattr(self, '_processed_intercooler_data'):
@@ -113,20 +131,24 @@ def intercooler_data(self):
                    'ic-trigger-id', 'ic-trigger-name', 'ic-request']
         ic_qd = IntercoolerQueryDict('', encoding=self.encoding)
         with _mutate_querydict(ic_qd) as IC_DATA:
+            if self.method in ('GET', 'HEAD', 'OPTIONS'):
+                query_params = self.GET
+            else:
+                query_params = self.POST
             # For a little while, we need to pop data out of request.GET
-            with _mutate_querydict(self.GET) as GET:
+            with _mutate_querydict(query_params) as REQUEST_DATA:
                 for ic_key in IC_KEYS:
-                    if ic_key in GET:
+                    if ic_key in REQUEST_DATA:
                         # emulate how .get() behaves, because pop returns the
                         # whole shebang.
                         try:
-                            removed = GET.pop(ic_key)[-1]
+                            removed = REQUEST_DATA.pop(ic_key)[-1]
                         except IndexError:
                             removed = []
                         IC_DATA.update({ic_key: removed})
             # Don't pop these ones off, so that decisions can be made for
             # handling _method
-            ic_request = GET.get('_method')
+            ic_request = REQUEST_DATA.get('_method')
             IC_DATA.update({'_method': ic_request})
             # If HttpMethodOverride is in the middleware stack, this may
             # return True.

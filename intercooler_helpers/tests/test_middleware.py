@@ -113,12 +113,24 @@ def test_intercooler_data_removes_data_from_GET(rf, ic_mw):
     assert len(request.GET) == 1
 
 
+# TODO : test removes data from POST
+
+
 def test_http_method_override_via_querystring(rf, http_method_mw):
     request = rf.post('/?_method=patch', HTTP_X_REQUESTED_WITH='XMLHttpRequest')
     http_method_mw.process_request(request)
     assert request.changed_method is True
     assert request.method == 'PATCH'
     assert request.original_method == 'POST'
+    assert request.PATCH is request.POST
+
+def test_http_method_override_via_postdata(rf, http_method_mw):
+    request = rf.post('/', data={'_method': 'PUT'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    http_method_mw.process_request(request)
+    assert request.changed_method is True
+    assert request.method == 'PUT'
+    assert request.original_method == 'POST'
+    assert request.PUT is request.POST
 
 
 def test_http_method_override_via_header(rf, http_method_mw):
@@ -127,6 +139,7 @@ def test_http_method_override_via_header(rf, http_method_mw):
     assert request.changed_method is True
     assert request.method == 'PATCH'
     assert request.original_method == 'POST'
+    assert request.PATCH is request.POST
 
 
 def test_intercooler_querydict_copied_change_method_from_request(rf, http_method_mw, ic_mw):
