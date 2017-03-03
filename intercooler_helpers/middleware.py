@@ -183,3 +183,9 @@ class IntercoolerRedirector(MiddlewareMixin):
                 new_resp['X-IC-Redirect'] = url
                 return new_resp
         return response
+
+
+class SelectFromResponse(MiddlewareMixin):
+    def process_response(self, request, response):
+        if not request.is_intercooler():
+            return response

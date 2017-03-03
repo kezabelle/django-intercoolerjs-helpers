@@ -66,6 +66,7 @@ MIDDLEWARE_CLASSES = (
     'intercooler_helpers.middleware.HttpMethodOverride',
     'intercooler_helpers.middleware.IntercoolerData',
     'intercooler_helpers.middleware.IntercoolerRedirector',
+    'intercooler_helpers.middleware.SelectFromResponse',
 )
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'test_collectstatic')
