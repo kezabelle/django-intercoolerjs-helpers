@@ -54,7 +54,7 @@ Currently you need to clone it from `GitHub`_ because I've not published it on
 
 Configuration
 ^^^^^^^^^^^^^
-You need to add ``intercooler_helpers.middleware.IntercoolerMiddleware`` to your
+You need to add ``intercooler_helpers.middleware.IntercoolerData`` to your
 ``MIDDLEWARE_CLASSES`` (or ``MIDDLEWARE`` on Django **1.10+**).
 
 You may optionally want to add ``intercooler_helpers.middleware.HttpMethodOverride``
@@ -67,7 +67,7 @@ Usage
 
 A brief overview of the public API provided so far:
 
-IntercoolerMiddleware
+IntercoolerData
 *********************
 
 For fully correct detection of `Intercooler.js`_ requests, you can call

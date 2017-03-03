@@ -4,13 +4,13 @@ from __future__ import absolute_import, unicode_literals
 from django.utils.six.moves.urllib.parse import urlparse
 
 import pytest
-from intercooler_helpers.middleware import (IntercoolerMiddleware,
+from intercooler_helpers.middleware import (IntercoolerData,
                                             HttpMethodOverride)
 
 
 @pytest.fixture
 def ic_mw():
-    return IntercoolerMiddleware()
+    return IntercoolerData()
 
 @pytest.fixture
 def http_method_mw():

@@ -64,7 +64,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'intercooler_helpers.middleware.HttpMethodOverride',
-    'intercooler_helpers.middleware.IntercoolerMiddleware',
+    'intercooler_helpers.middleware.IntercoolerData',
     'intercooler_helpers.middleware.IntercoolerRedirector',
 )
 

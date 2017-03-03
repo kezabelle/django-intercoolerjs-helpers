@@ -18,7 +18,7 @@ except ImportError:  # < Django 1.10
         pass
 
 
-__all__ = ['IntercoolerMiddleware', 'HttpMethodOverride']
+__all__ = ['IntercoolerData', 'HttpMethodOverride']
 
 
 class HttpMethodOverride(MiddlewareMixin):
@@ -159,7 +159,7 @@ def intercooler_data(self):
     return self._processed_intercooler_data
 
 
-class IntercoolerMiddleware(MiddlewareMixin):
+class IntercoolerData(MiddlewareMixin):
     def process_request(self, request):
         request.maybe_intercooler = _maybe_intercooler.__get__(request)
         request.is_intercooler = _is_intercooler.__get__(request)
