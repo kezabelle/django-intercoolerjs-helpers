@@ -132,29 +132,31 @@ def intercooler_data(self):
                    'ic-id', 'ic-prompt-value', 'ic-target-id',
                    'ic-trigger-id', 'ic-trigger-name', 'ic-request']
         ic_qd = IntercoolerQueryDict('', encoding=self.encoding)
+        if self.method in ('GET', 'HEAD', 'OPTIONS'):
+            query_params = self.GET
+        else:
+            query_params = self.POST
+        query_keys = tuple(query_params.keys())
+        for ic_key in IC_KEYS:
+            if ic_key in query_keys:
+                # emulate how .get() behaves, because pop returns the
+                # whole shebang.
+                # For a little while, we need to pop data out of request.GET
+                with _mutate_querydict(query_params) as REQUEST_DATA:
+                    try:
+                        removed = REQUEST_DATA.pop(ic_key)[-1]
+                    except IndexError:
+                        removed = []
+                with _mutate_querydict(ic_qd) as IC_DATA:
+                    IC_DATA.update({ic_key: removed})
+        # Don't pop these ones off, so that decisions can be made for
+        # handling _method
+        ic_request = query_params.get('_method')
         with _mutate_querydict(ic_qd) as IC_DATA:
-            if self.method in ('GET', 'HEAD', 'OPTIONS'):
-                query_params = self.GET
-            else:
-                query_params = self.POST
-            # For a little while, we need to pop data out of request.GET
-            with _mutate_querydict(query_params) as REQUEST_DATA:
-                for ic_key in IC_KEYS:
-                    if ic_key in REQUEST_DATA:
-                        # emulate how .get() behaves, because pop returns the
-                        # whole shebang.
-                        try:
-                            removed = REQUEST_DATA.pop(ic_key)[-1]
-                        except IndexError:
-                            removed = []
-                        IC_DATA.update({ic_key: removed})
-            # Don't pop these ones off, so that decisions can be made for
-            # handling _method
-            ic_request = REQUEST_DATA.get('_method')
             IC_DATA.update({'_method': ic_request})
-            # If HttpMethodOverride is in the middleware stack, this may
-            # return True.
-            IC_DATA.changed_method = getattr(self, 'changed_method', False)
+        # If HttpMethodOverride is in the middleware stack, this may
+        # return True.
+        IC_DATA.changed_method = getattr(self, 'changed_method', False)
         self._processed_intercooler_data = ic_qd
     return self._processed_intercooler_data
 
