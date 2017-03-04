@@ -2,9 +2,9 @@ django-intercooler_helpers
 ==========================
 
 :author: Keryn Knight
-:version: 0.1.0
+:version: 0.2.0
 
-.. |travis_stable| image:: https://travis-ci.org/kezabelle/django-intercoolerjs-helpers.svg?branch=0.1.0
+.. |travis_stable| image:: https://travis-ci.org/kezabelle/django-intercoolerjs-helpers.svg?branch=0.2.0
   :target: https://travis-ci.org/kezabelle/django-intercoolerjs-helpers
 
 .. |travis_master| image:: https://travis-ci.org/kezabelle/django-intercoolerjs-helpers.svg?branch=master
@@ -13,7 +13,7 @@ django-intercooler_helpers
 ==============  ======
 Release         Status
 ==============  ======
-stable (0.1.0)  |travis_stable|
+stable (0.2.0)  |travis_stable|
 master          |travis_master|
 ==============  ======
 
@@ -47,9 +47,9 @@ application.
 Installation
 ^^^^^^^^^^^^
 
-You can grab ``0.1.0`` from `PyPI`_ like so::
+You can grab ``0.2.0`` from `PyPI`_ like so::
 
-  pip install django-intercooler-helpers==0.1.0
+  pip install django-intercooler-helpers==0.2.0
 
 Or you can grab it from  `GitHub`_  like this::
 

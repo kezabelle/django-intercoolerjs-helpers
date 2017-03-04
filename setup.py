@@ -49,7 +49,7 @@ KEYWORDS = (
 
 setup(
     name="django-intercooler_helpers",
-    version="0.1.0",
+    version="0.2.0",
     author="Keryn Knight",
     author_email="django-intercooler_helpers@kerynknight.com",
     maintainer="Keryn Knight",
