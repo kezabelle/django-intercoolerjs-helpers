@@ -38,12 +38,13 @@ def make_readme(root_path):
                 yield f.read()
 
 LICENSE = "BSD License"
-URL = ""
+URL = "https://github.com/kezabelle/django-intercoolerjs-helpers"
 LONG_DESCRIPTION = "\r\n\r\n----\r\n\r\n".join(make_readme(HERE))
-SHORT_DESCRIPTION = ""
+SHORT_DESCRIPTION = "a small reusable app for Django which provides a few improvements for working with Intercooler.js"
 KEYWORDS = (
     "django",
-    "intercooler_helpers",
+    "intercooler",
+    "intercoolerjs",
 )
 
 setup(
