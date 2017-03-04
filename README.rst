@@ -47,8 +47,11 @@ application.
 Installation
 ^^^^^^^^^^^^
 
-Currently you need to clone it from `GitHub`_ because I've not published it on
-`PyPI`_, so something like this ::
+You can grab ``0.1.0`` from `PyPI`_ like so::
+
+  pip install django-intercooler-helpers==0.1.0
+
+Or you can grab it from  `GitHub`_  like this::
 
   pip install -e git+https://github.com/kezabelle/django-intercooler-helpers.git#egg=django-intercooler-helpers
 
@@ -68,7 +71,7 @@ Usage
 A brief overview of the public API provided so far:
 
 IntercoolerData
-*********************
+***************
 
 For fully correct detection of `Intercooler.js`_ requests, you can call
 ``request.is_intercooler()``.
