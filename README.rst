@@ -91,9 +91,10 @@ so will not modify ``request.GET`` until access is attempted.
 The following properties exist, mapping back to the keys mentioned in the
 `Intercooler.js Reference document`_
 
-- ``request.intercooler_data.current_url``
+- ``request.intercooler_data.url`` returns a ``namedtuple`` containing
 
-  - returns the ``ic-current-url`` or ``None``
+  - returns the ``ic-current-url`` (converted via ``urlparse``) or ``None``
+  - A `Django`_ ``ResolverMatch`` pointing to the view which made the request (based on ``ic-current-url``) or ``None``
 - ``request.intercooler_data.element`` returns a ``namedtuple`` containing
 
   -  ``ic-element-name`` or ``None``
