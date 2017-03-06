@@ -65,6 +65,20 @@ as well, if you don't already have a method by which to fake the HTTP Method cha
 If you're using ``<meta name="intercoolerjs:use-actual-http-method" content="true"/>``
 then you don't need ``HttpMethodOverride`` at all.
 
+To install all the middleware, you want something like::
+
+  # MIDDLEWARE = ... for newer Django
+  MIDDLEWARE_CLASSES = (
+    # ...
+    'intercooler_helpers.middleware.HttpMethodOverride',
+    'intercooler_helpers.middleware.IntercoolerData',
+    'intercooler_helpers.middleware.IntercoolerRedirector',
+    # ...
+  )
+
+``HttpMethodOverride`` and ``IntercoolerData`` ought to be near the top of the iterable, as they both make use of ``process_request(request)``.
+``IntercoolerRedirector`` ought to be near the bottom, as it operates on ``process_response(request, response)`` and you probably want to convert the response to a client-side redirect at the earliest opportunity.
+
 Usage
 ^^^^^
 
@@ -159,8 +173,7 @@ If you have tox, you can just do::
 Running the demo
 ^^^^^^^^^^^^^^^^
 
-I've not yet built the demo, but eventually you'll be able to do something like
-the following. It assumes you're using something like `virtualenv`_ and
+A barebones demo is provided. It assumes you're using something like `virtualenv`_ and
 `virtualenvwrapper`_ but you can probably figure it out otherwise::
 
     mktmpenv --python=`which python3`
@@ -171,6 +184,7 @@ Then probably::
     cd src/django-intercooler-helpers
     python demo_project.py runserver
 
+It shows off a few of the same demos that the `Intercooler.js`_ website does.
 
 Contributing
 ------------
