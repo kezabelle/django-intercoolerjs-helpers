@@ -134,6 +134,12 @@ HttpMethodOverride
   originally used (``POST``)
 
 
+IntercoolerRedirector
+*********************
+
+If a redirect status code is given (> 300, < 400), and the request originated from `Intercooler.js`_ (assumes ``IntercoolerData`` is installed so that ``request.is_intercooler()`` may be called), remove the ``Location`` header from the response, and create a new ``HttpResponse`` with all the other headers, and also the ``X-IC-Redirect`` header to indicate to `Intercooler.js`_ that it needs to do a client side-redirect.
+
+
 Supported Django versions
 -------------------------
 
