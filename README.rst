@@ -53,7 +53,7 @@ You can grab ``0.2.0`` from `PyPI`_ like so::
 
 Or you can grab it from  `GitHub`_  like this::
 
-  pip install -e git+https://github.com/kezabelle/django-intercooler-helpers.git#egg=django-intercooler-helpers
+  pip install -e git+https://github.com/kezabelle/django-intercoolerjs-helpers.git#egg=django-intercoolerjs-helpers
 
 Configuration
 ^^^^^^^^^^^^^
