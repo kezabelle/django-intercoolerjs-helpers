@@ -2,7 +2,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from collections import namedtuple
-from contextlib import contextmanager
 
 from django.http import QueryDict, HttpResponse
 try:
@@ -16,7 +15,8 @@ try:
 except ImportError:  # < Django 1.10
     class MiddlewareMixin(object):
         pass
-
+from .helpers import _mutate_querydict, push_url_modifier, default_path_handler, \
+    redirect_modifier
 
 __all__ = ['IntercoolerData', 'HttpMethodOverride']
 
@@ -62,13 +62,6 @@ def _maybe_intercooler(self):
 
 def _is_intercooler(self):
     return self.is_ajax() and self.maybe_intercooler()
-
-
-@contextmanager
-def _mutate_querydict(qd):
-    qd._mutable = True
-    yield qd
-    qd._mutable = False
 
 
 NameId = namedtuple('NameId', 'name id')
@@ -173,13 +166,15 @@ class IntercoolerRedirector(MiddlewareMixin):
     def process_response(self, request, response):
         if not request.is_intercooler():
             return response
-        if response.status_code > 300 and response.status_code < 400:
-            if response.has_header('Location'):
-                url = response['Location']
-                del response['Location']
-                new_resp = HttpResponse()
-                for k, v in response.items():
-                    new_resp[k] = v
-                new_resp['X-IC-Redirect'] = url
-                return new_resp
+        return redirect_modifier(response, keep_headers=('*',))
+
+
+
+class IntercoolerPushUrl(MiddlewareMixin):
+    def process_response(self, request, response):
+        if not request.is_intercooler():
+            return response
+        push_url_modifier(request=request, response=response,
+                          path_handler=default_path_handler,
+                          keep_querystring_keys=('*',))
         return response
