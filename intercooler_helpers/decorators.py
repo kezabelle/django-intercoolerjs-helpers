@@ -2,7 +2,12 @@
 from __future__ import unicode_literals, absolute_import
 import wrapt
 from django.utils import inspect
-from .helpers import push_url_modifier, default_path_handler, redirect_modifier
+from .helpers import (push_url_modifier, default_path_handler,
+                      redirect_modifier, select_from_response_modifier)
+
+
+def get_request(*args, **kwargs):
+    return args[0]
 
 
 class ic_push_url(object):
@@ -20,8 +25,6 @@ class ic_push_url(object):
 
     @wrapt.decorator
     def __call__(self, wrapped, instance, args, kwargs):
-        def get_request(*_args, **_kwargs):
-            return _args[0]
         request = get_request(*args, **kwargs)
         response = wrapped(*args, **kwargs)
         if not request.is_intercooler():
@@ -49,11 +52,20 @@ class ic_redirect(object):
 
     @wrapt.decorator
     def __call__(self, wrapped, instance, args, kwargs):
-        def get_request(*_args, **_kwargs):
-            return _args[0]
         request = get_request(*args, **kwargs)
         response = wrapped(*args, **kwargs)
         if not request.is_intercooler():
             return response
         replacement_response = redirect_modifier(response, keep_headers=self.keep_headers)
         return replacement_response
+
+
+@wrapt.decorator
+def ic_select_from_response(wrapped, instance, args, kwargs):
+    request = get_request(*args, **kwargs)
+    response = wrapped(*args, **kwargs)
+    if not request.is_intercooler():
+        return response
+    select_from_response_modifier(request=request, response=response)
+    return response
+
