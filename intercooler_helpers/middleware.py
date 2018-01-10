@@ -3,7 +3,8 @@ from __future__ import absolute_import, unicode_literals
 
 from collections import namedtuple
 
-from django.http import QueryDict, HttpResponse
+from django.http import QueryDict
+
 try:
     from django.urls import Resolver404, resolve
 except ImportError:  # Django <1.10
@@ -16,7 +17,7 @@ except ImportError:  # < Django 1.10
     class MiddlewareMixin(object):
         pass
 from .helpers import _mutate_querydict, push_url_modifier, default_path_handler, \
-    redirect_modifier
+    redirect_modifier, select_from_response_modifier
 
 __all__ = ['IntercoolerData', 'HttpMethodOverride']
 
@@ -110,9 +111,13 @@ class IntercoolerQueryDict(QueryDict):
     def prompt_value(self):
         return self.get('ic-prompt-value', None)
 
+    @property
+    def select_from_response(self):
+        return self.get('ic-select-from-response', None)
+
     def __repr__(self):
         props = ('id', 'request', 'target_id', 'element', 'trigger',
-                 'prompt_value', 'url')
+                 'prompt_value', 'url', 'select_from_response')
         attrs = ['{name!s}={val!r}'.format(name=prop, val=getattr(self, prop))
                  for prop in props]
         return "<{cls!s}: {attrs!s}>".format(cls=self.__class__.__name__,
@@ -121,9 +126,18 @@ class IntercoolerQueryDict(QueryDict):
 
 def intercooler_data(self):
     if not hasattr(self, '_processed_intercooler_data'):
-        IC_KEYS = ['ic-current-url', 'ic-element-id', 'ic-element-name',
-                   'ic-id', 'ic-prompt-value', 'ic-target-id',
-                   'ic-trigger-id', 'ic-trigger-name', 'ic-request']
+        IC_KEYS = [
+            'ic-current-url',
+            'ic-element-id',
+            'ic-element-name',
+            'ic-id',
+            'ic-prompt-value',
+            'ic-request',
+            'ic-select-from-response',
+            'ic-target-id',
+            'ic-trigger-id',
+            'ic-trigger-name'
+        ]
         ic_qd = IntercoolerQueryDict('', encoding=self.encoding)
         if self.method in ('GET', 'HEAD', 'OPTIONS'):
             query_params = self.GET
@@ -177,4 +191,12 @@ class IntercoolerPushUrl(MiddlewareMixin):
         push_url_modifier(request=request, response=response,
                           path_handler=default_path_handler,
                           keep_querystring_keys=('*',))
+        return response
+
+
+class IntercoolerSelectResponse(MiddlewareMixin):
+    def process_response(self, request, response):
+        if not request.is_intercooler():
+            return response
+        select_from_response_modifier(request=request, response=response)
         return response

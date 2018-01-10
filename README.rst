@@ -73,11 +73,12 @@ To install all the middleware, you want something like::
     'intercooler_helpers.middleware.HttpMethodOverride',
     'intercooler_helpers.middleware.IntercoolerData',
     'intercooler_helpers.middleware.IntercoolerRedirector',
+    'intercooler_helpers.middleware.IntercoolerSelectResponse',
     # ...
   )
 
 ``HttpMethodOverride`` and ``IntercoolerData`` ought to be near the top of the iterable, as they both make use of ``process_request(request)``.
-``IntercoolerRedirector`` ought to be near the bottom, as it operates on ``process_response(request, response)`` and you probably want to convert the response to a client-side redirect at the earliest opportunity.
+``IntercoolerRedirector`` and others ought to be near the bottom, as they operate on ``process_response(request, response)`` and you probably want to convert the response at the earliest opportunity.
 
 Usage
 ^^^^^
@@ -132,6 +133,13 @@ The following properties exist, mapping back to the keys mentioned in the
   - If no ``ic-prompt-name`` was given and a prompt was used, this will contain
     the user's response. Appears to be undocumented?
 
+- ``request.intercooler_data.select_from_response``
+
+  - a string indicating the `jQuery`_ selector being used by Intercooler in the browser.
+    If `PyQuery`_ and `lxml`_ are installed, and the ``IntercoolerSelectResponse``
+    middleware is being used, the data sent back to the client is minimized to
+    be just the HTML this selector finds. See `this discussion`_ for the use-case,
+    which is mainly to progressively enhance existing HTML sites.
 
 HttpMethodOverride
 ******************
@@ -146,6 +154,18 @@ HttpMethodOverride
   will contain the original request. It should always be ``POST``
 - ``request.method`` will reflect the desired HTTP method, rather than the one
   originally used (``POST``)
+
+
+IntercoolerSelectResponse
+*********************
+
+If a response is ``text/html`` and `ic-select-from-response` was sent in the
+request, attempts to return **just** the HTML which would match the `jQuery`_
+selector when executed by the client (`Intercooler.js`_)
+Only applies if both `lxml`_ and `PyQuery`_ are installed - if they're not
+it falls back to returning all the HTML and lets `jQuery`_ figure it out in-browser.
+
+Also updates the HTML ``<title>`` if it finds one in the response HTML's ``<head>``.
 
 
 IntercoolerRedirector
@@ -220,3 +240,7 @@ It's `FreeBSD`_. There's should be a ``LICENSE`` file in the root of the reposit
 .. _kezabelle/django-intercooler-helpers: https://github.com/kezabelle/django-intercooler-helpers/
 .. _issue tracker: https://github.com/kezabelle/django-intercooler-helpers/issues/
 .. _my Twitter account: https://twitter.com/kezabelle/
+.. _jQuery: https://jquery.com/
+.. _PyQuery: https://pythonhosted.org/pyquery/
+.. _lxml: http://lxml.de/
+.. _this discussion: https://github.com/LeadDyno/intercooler-js/issues/173

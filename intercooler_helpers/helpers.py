@@ -1,8 +1,22 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
+
+import logging
+import warnings
 from contextlib import contextmanager
-from django.utils.encoding import escape_uri_path
+
 from django.http import QueryDict, HttpResponse
+from django.utils.encoding import escape_uri_path
+
+try:
+    from pyquery import PyQuery
+    from lxml import etree
+    CAN_PYQUERY = True
+except ImportError:
+    CAN_PYQUERY = False
+
+
+logger = logging.getLogger(__name__)
 
 
 def default_path_handler(request):
@@ -47,7 +61,6 @@ def redirect_modifier(response, keep_headers):
         if response.has_header('Location') and not response.has_header(header_name):
             url = response['Location']
             del response['Location']
-            set(keep_headers) == {'*'}
             new_resp = HttpResponse()
             for k, v in response.items():
                 # keep any headers (other than Location)
@@ -60,3 +73,59 @@ def redirect_modifier(response, keep_headers):
             new_resp[header_name] = url
             return new_resp
     return response
+
+if CAN_PYQUERY:
+
+    def select_from_response_modifier(request, response):
+        content_type = response['Content-Type'][0:10]
+        if content_type not in ("text/html", 'text/html;'):
+            return response
+        try:
+            tree = PyQuery(response.content)
+        except (etree.XMLSyntaxError, etree.ParserError) as e:
+            logger.exception(
+                "Failed to parse potential HTML content",
+                exc_info=e, extra={'request': request,
+                                   'status_code': response.status_code
+                                   })
+            return response
+        else:
+            selector = request.intercooler_data.select_from_response
+            if selector:
+                inner_html = tree(selector)
+                if not inner_html:
+                    logger.warning("Intercooler requested selector: `{}` for "
+                                   "which pyquery returned "
+                                   "0 results".format(selector),
+                                   extra={'request': request,
+                                   'status_code': response.status_code})
+                    return response
+                element_count = len(inner_html)
+                if not element_count == 1:
+                    logger.warning("Intercooler requested selector: `{}` "
+                                   "which returned "
+                                   "{} results.".format(selector, element_count),
+                                   extra={'request': request,
+                                   'status_code': response.status_code})
+                    return response
+                outer_html = inner_html.eq(0).outerHtml()
+                if not outer_html:
+                    logger.warning("Intercooler requested the parent element "
+                                   "for selector: `{}`, and pyquery returned "
+                                   "0 results".format(selector),
+                                   extra={'request': request,
+                                          'status_code': response.status_code})
+                    return response
+                response.content = outer_html
+                header_name = 'X-IC-Title'
+                if not response.has_header(header_name):
+                    title = tree.find('head > title:first')
+                    if title:
+                        response[header_name] = title.eq(0).text()
+            return response
+
+else:
+
+    def select_from_response_modifier(request, response):
+        warnings.warn("missing pyquery or lxml package, relying on Intercooler's client-side HTML parsing.")
+        return response

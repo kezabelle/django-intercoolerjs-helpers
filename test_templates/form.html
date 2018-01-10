@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}{{ form.is_valid|yesno:"Valid,Invalid" }} Form title{% endblock title %}
+
 {% block content %}
 {% include "form_include.html" %}
 {% endblock content %}

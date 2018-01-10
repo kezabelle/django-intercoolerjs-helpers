@@ -71,6 +71,9 @@ setup(
         "pytest-remove-stale-bytecode>=1.0",
         "pytest-catchlog>=1.2",
     ],
+    extras_require={
+        'pyquery': ['pyquery>=1.3', 'lxml>=4.1']
+    },
     cmdclass={"test": PyTest},
     zip_safe=False,
     keywords=" ".join(KEYWORDS),

@@ -66,6 +66,7 @@ MIDDLEWARE_CLASSES = (
     'intercooler_helpers.middleware.HttpMethodOverride',
     'intercooler_helpers.middleware.IntercoolerData',
     'intercooler_helpers.middleware.IntercoolerRedirector',
+    'intercooler_helpers.middleware.IntercoolerSelectResponse',
 )
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'test_collectstatic')
@@ -74,3 +75,21 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'test_media')
 USE_TZ = True
 
 SILENCED_SYSTEM_CHECKS = ['1_8.W001']
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'intercooler_helpers': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
