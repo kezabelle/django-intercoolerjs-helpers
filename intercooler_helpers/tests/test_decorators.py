@@ -8,10 +8,16 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.template.response import TemplateResponse
 from django.utils.decorators import method_decorator
 from django.views import View
-
+from intercooler_helpers.helpers import CAN_PYQUERY
 from intercooler_helpers.decorators import (ic_select_from_response,
                                             ic_redirect,
                                             ic_push_url, )
+
+
+skip_missing_pyquery_lxml =  pytest.mark.skipif(
+    CAN_PYQUERY is False,
+    reason="Test execution depends on PyQuery and lxml packages"
+)
 
 
 def _select_from_response_fbv(request):
@@ -38,6 +44,7 @@ class SelectFromResponseView2(_select_from_response_cbv):
     def dispatch(self, *args, **kwargs):
         return super(SelectFromResponseView2, self).dispatch(*args, **kwargs)
 
+@skip_missing_pyquery_lxml
 @pytest.mark.parametrize("view", [
     select_from_response_view,
     ic_select_from_response(_select_from_response_cbv.as_view()),
