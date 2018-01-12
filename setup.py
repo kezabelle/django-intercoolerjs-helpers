@@ -63,6 +63,7 @@ setup(
     install_requires=[
         "Django>=1.8",
         "django-intercoolerjs>=1.1.0.0",
+        "wrapt>=1.10.11",
     ],
     tests_require=[
         "pytest>=2.6",
