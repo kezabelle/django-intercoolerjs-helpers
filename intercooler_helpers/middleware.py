@@ -3,6 +3,8 @@ from __future__ import absolute_import, unicode_literals
 
 from collections import namedtuple
 
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import QueryDict
 
 try:
@@ -175,8 +177,18 @@ class IntercoolerData(MiddlewareMixin):
         request.intercooler_data = SimpleLazyObject(intercooler_data.__get__(request))
 
 
+class IntercoolerMW(MiddlewareMixin):
+    def __init__(self, *args, **kwargs):
+        super(IntercoolerMW, self).__init__(*args, **kwargs)
+        mw = getattr(settings, 'MIDDLEWARE', ()) or getattr(settings, 'MIDDLEWARE_CLASSES', ())
+        if 'intercooler_helpers.middleware.IntercoolerData' not in mw:
+            raise ImproperlyConfigured(
+                "{} depends on missing IntercoolerData middleware which "
+                "provides request.is_intercooler() and request.intercooler_data".format(self.__class__.__name__)
+            )
 
-class IntercoolerRedirector(MiddlewareMixin):
+
+class IntercoolerRedirector(IntercoolerMW):
     def process_response(self, request, response):
         if not request.is_intercooler():
             return response
@@ -184,7 +196,7 @@ class IntercoolerRedirector(MiddlewareMixin):
 
 
 
-class IntercoolerPushUrl(MiddlewareMixin):
+class IntercoolerPushUrl(IntercoolerMW):
     def process_response(self, request, response):
         if not request.is_intercooler():
             return response
@@ -194,7 +206,7 @@ class IntercoolerPushUrl(MiddlewareMixin):
         return response
 
 
-class IntercoolerSelectResponse(MiddlewareMixin):
+class IntercoolerSelectResponse(IntercoolerMW):
     def process_response(self, request, response):
         if not request.is_intercooler():
             return response
