@@ -7,7 +7,7 @@ from django.forms import Form, IntegerField
 from django.http import HttpResponseRedirect, HttpResponse
 from django.template.response import TemplateResponse
 from django.utils.decorators import method_decorator
-from django.views import View
+from django.views.generic.base import View
 from intercooler_helpers.helpers import CAN_PYQUERY
 from intercooler_helpers.decorators import (ic_select_from_response,
                                             ic_redirect,
