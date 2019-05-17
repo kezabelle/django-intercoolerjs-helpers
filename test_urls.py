@@ -14,6 +14,8 @@ try:
 except ImportError:  # Django <1.10
     from django.core.urlresolvers import reverse
 
+from intercooler_helpers import views as ic_views
+
 
 def _page_data():
     return tuple(str(uuid4()) for x in range(0, 10))
@@ -61,7 +63,6 @@ def form(request):
     return TemplateResponse(request, template=template, context=context)
 
 
-
 def polling_stop(request):
     resp = HttpResponse("Cancelled")
     resp['X-IC-CancelPolling'] = "true"
@@ -94,6 +95,19 @@ def infinite_scrolling(request):
     return TemplateResponse(request, template=template, context=context)
 
 
+def html_part(request):
+    return HttpResponse('html_part_function: To be implemented...')
+
+
+class ICView(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin):
+    ic_tuples = [
+            ('get', None, 'test_class', 'get_html_part'),
+            ]
+
+    def get_html_part(self, request, *args, **kwargs):
+        return HttpResponse('get_html_part: To be implemented...')
+
+
 def root(request):
     template = "demo_project.html"
     context = {
@@ -112,6 +126,8 @@ urlpatterns = [
     url('^polling/start/$', polling_start, name='polling_start'),
     url('^polling/$', polling, name='polling'),
     url('^infinite/scrolling/$', infinite_scrolling, name='infinite_scrolling'),
+    url('^html_part/$', html_part, name='html_part'),
+    url('^ic_dispatch/$', ICView.as_view(), name='ic_dispatch'),
     url('^$', root, name='root'),
 ]
 

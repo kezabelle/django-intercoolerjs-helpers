@@ -56,6 +56,44 @@
 </div>
 <hr>
 
+<div class="container" id="html_part">
+  <h3>Using ICTemplateResponseMixin</h3>
+    <p>This example demos using ICTemplateResponseMixin to extract html part from template file.</p>
+  <h4 ic-get-from="{% url 'html_part' %}" ic-trigger-on="load" ic-target="#test_function">Explanation</h4>
+  <ul>
+    <li>
+      Single template file contains full page design, with some elements contain id to identify themself.
+    </li>
+    <li>
+      The extract_html_part method will use an id to extract the element which has that id.
+    </li>
+    <li>
+      Then the extracted part can be used to render html response.
+    </li>
+  </ul>
+  <span id="test_function"></span>
+</div>
+<hr>
+
+<div class="container" id="ic_dispatch">
+  <h3>Using ICDispatchMixin class</h3>
+  <p>This example demos using class based view mixin to process different combinations of request's method, trigger.</p>
+  <h4>Explanation</h4>
+  <ul>
+    <li>
+      The dispatch method of ICDispatchMixin class uses request's method, trigger id, and target id to find matching tuple in a list.
+    </li>
+    <li>
+      If found, the corresponding method name from the mached tuple is called to handle the request.
+    </li>
+    <li>
+      If not, default handler for request's method is called.
+    </li>
+  </ul>
+  <span id="test_class" ic-get-from="{% url 'ic_dispatch' %}" ic-trigger-on="load"></span>
+</div>
+<hr>
+
 <div class="container">
 <h3><a href="{% url 'infinite_scrolling' %}">Implementing Infinite Scrolling</a></h3>
 <p>This example demos an infinite scroll UI.</p>
