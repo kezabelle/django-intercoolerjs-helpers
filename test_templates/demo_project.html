@@ -58,8 +58,8 @@
 
 <div class="container" id="html_part">
   <h3>Using ICTemplateResponseMixin</h3>
-    <p>This example demos using ICTemplateResponseMixin to extract html part from template file.</p>
-  <h4 ic-get-from="{% url 'html_part' %}" ic-trigger-on="load" ic-target="#test_function">Explanation</h4>
+    <p>This example demos using ICTemplateResponseMixin to extract html part from template file.</p>{% if show_details %}
+  <h4>Explanation</h4>
   <ul>
     <li>
       Single template file contains full page design, with some elements contain id to identify themself.
@@ -71,7 +71,9 @@
       Then the extracted part can be used to render html response.
     </li>
   </ul>
-  <span id="test_function"></span>
+  <a id="detail-btn" class="btn btn-primary" ic-get-from="{% url 'html_part_hide' %}" ic-target="#html_part"><span>Hide details</span></a>{% else %}
+  <a id="detail-btn" class="btn btn-primary" ic-get-from="{% url 'html_part_show' %}" ic-target="#html_part"><span>Show details</span></a>
+  {% endif %}{# if show_details #}
 </div>
 <hr>
 
@@ -90,7 +92,10 @@
       If not, default handler for request's method is called.
     </li>
   </ul>
-  <span id="test_class" ic-get-from="{% url 'ic_dispatch' %}" ic-trigger-on="load"></span>
+  <a id="get-btn" class="btn btn-primary" ic-get-from="{% url 'ic_dispatch' %}" ic-target="#test_class"><span>Get</span></a>
+  <input id="input_message" name="message" placeholder="Input some thing then post" />
+  <a id="post-btn" class="btn btn-primary" ic-post-to="{% url 'ic_dispatch' %}" ic-include="#input_message" ic-target="#test_class"><span>Post</span></a>
+  <span id="test_class"><strong>{{ message }}</strong></span>
 </div>
 <hr>
 

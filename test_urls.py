@@ -95,17 +95,33 @@ def infinite_scrolling(request):
     return TemplateResponse(request, template=template, context=context)
 
 
-def html_part(request):
-    return HttpResponse('html_part_function: To be implemented...')
+def html_part(request, show_details=False):
+    template = "demo_project.html"
+    context = {
+        'show_details': show_details,
+    }
+    return ic_views.ICTemplateResponse(
+            request, template=template, context=context)
 
 
 class ICView(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin):
+    template_name = "demo_project.html"
     ic_tuples = [
             ('get', None, 'test_class', 'get_html_part'),
+            ('post', 'post-btn', 'test_class', 'post_message'),
             ]
 
     def get_html_part(self, request, *args, **kwargs):
-        return HttpResponse('get_html_part: To be implemented...')
+        context = {
+            'message': 'Dispatched to get',
+        }
+        return self.render_to_response(context)
+
+    def post_message(self, request, *args, **kwargs):
+        context = {
+            'message': 'Dispatched to post: ' + request.POST['message'],
+        }
+        return self.render_to_response(context)
 
 
 def root(request):
@@ -126,7 +142,10 @@ urlpatterns = [
     url('^polling/start/$', polling_start, name='polling_start'),
     url('^polling/$', polling, name='polling'),
     url('^infinite/scrolling/$', infinite_scrolling, name='infinite_scrolling'),
-    url('^html_part/$', html_part, name='html_part'),
+    url('^html_part/show/$', html_part, kwargs={'show_details': True},
+        name='html_part_show'),
+    url('^html_part/$', html_part, kwargs={'show_details': False},
+        name='html_part_hide'),
     url('^ic_dispatch/$', ICView.as_view(), name='ic_dispatch'),
     url('^$', root, name='root'),
 ]

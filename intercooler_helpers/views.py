@@ -1,44 +1,51 @@
-from django.template import engines
+from django.template import engines, response
 from django.views.generic import base as base_views
 
 import pyquery
 
 
-class ICTemplateResponseMixin(base_views.TemplateResponseMixin):
+class ICTemplateResponse(response.TemplateResponse):
     @property
     def ic_data(self):
-        return self.request.intercooler_data
+        return self._request.intercooler_data
 
     def get_target_id(self):
         return self.ic_data.target_id
 
-    def extract_html_part(self, find, from_html):
+    def extract_html_part(self, file_name, find):
         '''
         This find the element that has find string then extract the part from
-        html string.
+        html file.
         '''
-        pq = pyquery.PyQuery(from_html)
+        with open(file_name) as tmpl_file:
+            tmpl_content = tmpl_file.read()
+        pq = pyquery.PyQuery(tmpl_content)
         html_part = pq(find).html()
         return html_part
 
-    def render_to_response(self, context, **response_kwargs):
+    def resolve_template(self, template):
         '''
-        This retrieves ic-target-id from ic data, then use it to extract part
-        of template which has the id.
+        After resolving template, check if request is intercooler and has
+        target id. Use the id to extract element which has the id.
         '''
-        response = super().render_to_response(context, **response_kwargs)
-        if not self.ic_data.request:
-            return response
+        template_obj = super().resolve_template(template)
+        if self._request.is_intercooler() and self.get_target_id(): pass
+        else:
+            return template_obj
 
-        template_file = response.resolve_template(response.template_name)
-        with open(str(template_file.origin)) as tmpl_file:
-            tmpl_content = tmpl_file.read()
         html_part = self.extract_html_part(
-                '#' + self.get_target_id(), tmpl_content)
-        django_engine = engines['django']
-        template = django_engine.from_string(html_part)
-        response.template_name = template
-        return response
+                str(template_obj.origin), '#' + self.get_target_id())
+        engine = engines[template_obj.backend.name]
+        template_obj = engine.from_string(html_part)
+        return template_obj
+
+
+class ICTemplateResponseMixin(base_views.TemplateResponseMixin):
+    response_class = ICTemplateResponse
+
+    @property
+    def ic_data(self):
+        return self.request.intercooler_data
 
 
 class ICDispatchMixin(base_views.View):
