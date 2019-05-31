@@ -1,16 +1,27 @@
+import re
+
+from django import http
+from django.core import exceptions
 from django.template import engines, response
-from django.views.generic import base as base_views
+from django.utils.decorators import classonlymethod
+from django.views.generic import base as base_views, edit as edit_views
 
 import pyquery
 
 
 class ICTemplateResponse(response.TemplateResponse):
+    target_map = {}
+
     @property
     def ic_data(self):
         return self._request.intercooler_data
 
     def get_target_id(self):
-        return self.ic_data.target_id
+        target_id = self.ic_data.target_id
+        try:
+            return self.target_map[target_id]
+        except KeyError: pass
+        return target_id
 
     def extract_html_part(self, file_name, find):
         '''
@@ -47,30 +58,69 @@ class ICTemplateResponseMixin(base_views.TemplateResponseMixin):
     def ic_data(self):
         return self.request.intercooler_data
 
+    @classonlymethod
+    def as_view(cls, target_map = {}, **initkwargs):
+        cls.response_class.target_map = target_map
+        return super().as_view(**initkwargs)
+
 
 class ICDispatchMixin(base_views.View):
     '''
     This provides dispatcher for routing to correct method based on
     IntercoolerJS method/trigger/target tuple.
     '''
-    ic_tuples = []
+    @classonlymethod
+    def as_view(cls, ic_tuples = [], **initkwargs):
+        cls.ic_tuples = ic_tuples
+        return super().as_view(**initkwargs)
 
     def dispatch(self, request, *args, **kwargs):
         method = super().dispatch
         if not self.ic_data.request:
             return method(request, *args, **kwargs)
+        req_method = request.method.lower()
+        req_trigger = self.ic_data.trigger.id
+        req_target = self.ic_data.target_id
+        # print('dispatch', request.POST, req_method, req_trigger, req_target)
+        # print(self.ic_tuples)
+        def match(first, second):
+            if not first or first == second:
+                return True
+            esc_first = re.escape(first).replace('\\*', '.*')
+            # print('%r <> %r' % (esc_first, second))
+            return re.match(esc_first, second)
         try:
-            req_method = request.method.lower()
-            req_trigger = self.ic_data.trigger.id
-            req_target = self.ic_data.target_id
             method_name = next(method_name
                     for method, trigger, target, method_name in self.ic_tuples
-                    if (not method or method == req_method)
-                    and (not trigger or trigger == req_trigger)
-                    and (not target or target == req_target)
+                    if match(method, req_method)
+                    and match(trigger, req_trigger)
+                    and match(target, req_target)
                     )
             method = getattr(self, method_name)
             # Not catch AttributeError for developer to know what is the wrong
             # method name
         except StopIteration: pass
+        # Explicit is better than implicit
+        # return http.HttpResponseServerError(
+        #         '%s: Not implemented method %s, trigger %s, target %s'
+        #         % (self.__class__.__name__,
+        #             req_method, req_trigger, req_target))
         return method(request, *args, **kwargs)
+
+
+class ICUpdateView(edit_views.UpdateView):
+    def form_valid(self, form):
+        if self.ic_data.request: pass
+        else:
+            try:
+                return super().form_valid(form)
+            except exceptions.ImproperlyConfigured as err:
+                message = err.args[0].replace(
+                        'a url',
+                        'a url or define a get_success_url method in view class')
+                raise exceptions.ImproperlyConfigured(message)
+        self.object = form.save()
+        # Although the form is valid, as user cannot refresh ic post
+        # request, we reuse form_invalid logic to render neccessary
+        # template.
+        return super().form_invalid(form)
