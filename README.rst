@@ -27,7 +27,7 @@ What it does
 ``intercooler_helpers`` is a small reusable app for `Django`_ which provides a
 few improvements for working with `Intercooler.js`_.
 
-It providea a middleware which extracts relevant `Intercooler.js`_ data from the
+It provides a middleware which extracts relevant `Intercooler.js`_ data from the
 querystring, and attaches it to the request as a separate ``QueryDict`` (ie: it
 behaves like ``request.POST`` or ``request.GET``)
 
@@ -107,7 +107,7 @@ The following properties exist, mapping back to the keys mentioned in the
 
 - ``request.intercooler_data.url`` returns a ``namedtuple`` containing
 
-  - returns the ``ic-current-url`` (converted via ``urlparse``) or ``None``
+  - the ``ic-current-url`` (converted via ``urlparse``) or ``None``
   - A `Django`_ ``ResolverMatch`` pointing to the view which made the request (based on ``ic-current-url``) or ``None``
 - ``request.intercooler_data.element`` returns a ``namedtuple`` containing
 
