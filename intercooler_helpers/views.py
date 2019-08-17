@@ -39,7 +39,8 @@ class ICTemplateResponse(response.TemplateResponse):
         After resolving template, check if request is intercooler and has
         target id. Use the id to extract element which has the id.
         '''
-        template_obj = super().resolve_template(template)
+        # super of Python 2.7
+        template_obj = super(ICTemplateResponse).resolve_template(template)
         if self._request.is_intercooler() and self.get_target_id(): pass
         else:
             return template_obj
@@ -61,7 +62,8 @@ class ICTemplateResponseMixin(base_views.TemplateResponseMixin):
     @classonlymethod
     def as_view(cls, target_map = {}, **initkwargs):
         cls.response_class.target_map = target_map
-        return super().as_view(**initkwargs)
+        # super of Python 2.7
+        return super(ICTemplateResponseMixin, cls).as_view(**initkwargs)
 
 
 class ICDispatchMixin(base_views.View):
@@ -72,10 +74,12 @@ class ICDispatchMixin(base_views.View):
     @classonlymethod
     def as_view(cls, ic_tuples = [], **initkwargs):
         cls.ic_tuples = ic_tuples
-        return super().as_view(**initkwargs)
+        # super of Python 2.7
+        return super(ICDispatchMixin, cls).as_view(**initkwargs)
 
     def dispatch(self, request, *args, **kwargs):
-        method = super().dispatch
+        # super of Python 2.7
+        method = super(ICDispatchMixin).dispatch
         if not self.ic_data.request:
             return method(request, *args, **kwargs)
         req_method = request.method.lower()
@@ -113,7 +117,8 @@ class ICUpdateView(edit_views.UpdateView):
         if self.ic_data.request: pass
         else:
             try:
-                return super().form_valid(form)
+                # super of Python 2.7
+                return super(ICUpdateView).form_valid(form)
             except exceptions.ImproperlyConfigured as err:
                 message = err.args[0].replace(
                         'a url',
@@ -123,4 +128,5 @@ class ICUpdateView(edit_views.UpdateView):
         # Although the form is valid, as user cannot refresh ic post
         # request, we reuse form_invalid logic to render neccessary
         # template.
-        return super().form_invalid(form)
+        # super of Python 2.7
+        return super(ICUpdateView).form_invalid(form)
