@@ -40,13 +40,15 @@ class ICTemplateResponse(response.TemplateResponse):
         target id. Use the id to extract element which has the id.
         '''
         # super of Python 2.7
-        template_obj = super(ICTemplateResponse, self).resolve_template(template)
-        if self._request.is_intercooler() and self.get_target_id(): pass
+        template_obj = super(ICTemplateResponse, self
+                ).resolve_template(template)
+        target_id = self._request.is_intercooler() and self.get_target_id()
+        if target_id: pass
         else:
             return template_obj
 
         html_part = self.extract_html_part(
-                str(template_obj.origin), '#' + self.get_target_id())
+                str(template_obj.origin), '#' + target_id)
         engine = engines[template_obj.backend.name]
         template_obj = engine.from_string(html_part)
         return template_obj

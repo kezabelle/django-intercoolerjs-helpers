@@ -136,6 +136,15 @@ class ICView(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin):
         return self.render_to_response(context)
 
 
+class ICTRNewMap(ic_views.ICTemplateResponse):
+    target_map = {'target_id': 'mapped_id'}
+
+
+class ICUpdate(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin,
+        ic_views.ICUpdateView):
+    response_class = ICTRNewMap
+
+
 def root(request):
     template = "demo_project.html"
     context = {
@@ -161,9 +170,9 @@ urlpatterns = [
     url('^ic_dispatch/$', ICView.as_view(target_map={
         'new_target': 'test_class',
         }), name='ic_dispatch'),
-    url('^ic_as_view/$', ic_views.ICDispatchMixin.as_view(ic_tuples=[
-        ('get', 'trigger_id', 'target_id', 'action'),
-        ]), name='ic_as_view'),
+    url('^ic_as_view/$', ICUpdate.as_view(
+        ic_tuples=[('get', 'trigger_id', 'target_id', 'action')],
+        ), name='ic_update'),
     url('^$', root, name='root'),
 ]
 
