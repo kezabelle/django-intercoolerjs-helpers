@@ -40,7 +40,7 @@ class ICTemplateResponse(response.TemplateResponse):
         target id. Use the id to extract element which has the id.
         '''
         # super of Python 2.7
-        template_obj = super(ICTemplateResponse).resolve_template(template)
+        template_obj = super(ICTemplateResponse, self).resolve_template(template)
         if self._request.is_intercooler() and self.get_target_id(): pass
         else:
             return template_obj
@@ -53,6 +53,7 @@ class ICTemplateResponse(response.TemplateResponse):
 
 
 class ICTemplateResponseMixin(base_views.TemplateResponseMixin):
+    target_map = {}
     response_class = ICTemplateResponse
 
     @property
@@ -61,7 +62,7 @@ class ICTemplateResponseMixin(base_views.TemplateResponseMixin):
 
     @classonlymethod
     def as_view(cls, target_map = {}, **initkwargs):
-        cls.response_class.target_map = target_map
+        cls.response_class.target_map = target_map or cls.target_map
         # super of Python 2.7
         return super(ICTemplateResponseMixin, cls).as_view(**initkwargs)
 
@@ -73,13 +74,15 @@ class ICDispatchMixin(base_views.View):
     '''
     @classonlymethod
     def as_view(cls, ic_tuples = [], **initkwargs):
-        cls.ic_tuples = ic_tuples
+        if ic_tuples:
+            cls.ic_tuples = ic_tuples
+        else: pass
         # super of Python 2.7
         return super(ICDispatchMixin, cls).as_view(**initkwargs)
 
     def dispatch(self, request, *args, **kwargs):
         # super of Python 2.7
-        method = super(ICDispatchMixin).dispatch
+        method = super(ICDispatchMixin, self).dispatch
         if not self.ic_data.request:
             return method(request, *args, **kwargs)
         req_method = request.method.lower()
@@ -92,7 +95,7 @@ class ICDispatchMixin(base_views.View):
                 return True
             esc_first = re.escape(first).replace('\\*', '.*')
             # print('%r <> %r' % (esc_first, second))
-            return re.match(esc_first, second)
+            return re.match(esc_first, str(second))
         try:
             method_name = next(method_name
                     for method, trigger, target, method_name in self.ic_tuples
@@ -118,7 +121,7 @@ class ICUpdateView(edit_views.UpdateView):
         else:
             try:
                 # super of Python 2.7
-                return super(ICUpdateView).form_valid(form)
+                return super(ICUpdateView, self).form_valid(form)
             except exceptions.ImproperlyConfigured as err:
                 message = err.args[0].replace(
                         'a url',
@@ -129,4 +132,4 @@ class ICUpdateView(edit_views.UpdateView):
         # request, we reuse form_invalid logic to render neccessary
         # template.
         # super of Python 2.7
-        return super(ICUpdateView).form_invalid(form)
+        return super(ICUpdateView, self).form_invalid(form)

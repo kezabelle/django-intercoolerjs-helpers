@@ -109,7 +109,15 @@ class ICView(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin):
     ic_tuples = [
             ('get', None, 'test_class', 'get_html_part'),
             ('post', 'post-btn', 'test_class', 'post_message'),
+            ('post', 'post-btn', 'new_target', 'post_message'),
+            ('get', 'post-btn', None, 'test_full_template'),
             ]
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('In GET')
+
+    def post(self, request, *args, **kwargs):
+        return HttpResponse('In POST')
 
     def get_html_part(self, request, *args, **kwargs):
         context = {
@@ -121,6 +129,10 @@ class ICView(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin):
         context = {
             'message': 'Dispatched to post: ' + request.POST['message'],
         }
+        return self.render_to_response(context)
+
+    def test_full_template(self, request, *args, **kwargs):
+        context = {}
         return self.render_to_response(context)
 
 
@@ -146,7 +158,12 @@ urlpatterns = [
         name='html_part_show'),
     url('^html_part/$', html_part, kwargs={'show_details': False},
         name='html_part_hide'),
-    url('^ic_dispatch/$', ICView.as_view(), name='ic_dispatch'),
+    url('^ic_dispatch/$', ICView.as_view(target_map={
+        'new_target': 'test_class',
+        }), name='ic_dispatch'),
+    url('^ic_as_view/$', ic_views.ICDispatchMixin.as_view(ic_tuples=[
+        ('get', 'trigger_id', 'target_id', 'action'),
+        ]), name='ic_as_view'),
     url('^$', root, name='root'),
 ]
 
