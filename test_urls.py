@@ -53,6 +53,8 @@ class TestForm(Form):
     field = CharField()
     number = IntegerField(max_value=10, min_value=5)
 
+    def save(self): pass
+
 
 def form(request):
     template = "form.html"
@@ -143,6 +145,18 @@ class ICTRNewMap(ic_views.ICTemplateResponse):
 class ICUpdate(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin,
         ic_views.ICUpdateView):
     response_class = ICTRNewMap
+    template_name = "form.html"
+
+    def check_form(self, request, *args, **kwargs):
+        _form = TestForm(request.POST or None)
+        return self.form_valid(_form)
+        # if self.form_valid(_form):
+        #     return redirect(reverse('redirected'))
+        # context = {'form': _form}
+        # return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        return self.check_form(request, *args, **kwargs)
 
 
 def root(request):
@@ -170,8 +184,11 @@ urlpatterns = [
     url('^ic_dispatch/$', ICView.as_view(target_map={
         'new_target': 'test_class',
         }), name='ic_dispatch'),
-    url('^ic_as_view/$', ICUpdate.as_view(
-        ic_tuples=[('get', 'trigger_id', 'target_id', 'action')],
+    url('^ic_update/$', ICUpdate.as_view(
+        ic_tuples=[
+            ('get', 'trigger_id', 'target_id', 'action'),
+            ('post', 'trigger_id', 'target_id', 'check_form'),
+            ],
         ), name='ic_update'),
     url('^$', root, name='root'),
 ]
