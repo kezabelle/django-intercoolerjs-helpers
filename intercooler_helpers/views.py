@@ -32,6 +32,9 @@ class ICTemplateResponse(response.TemplateResponse):
             tmpl_content = tmpl_file.read()
         pq = pyquery.PyQuery(tmpl_content)
         html_part = pq(find).html()
+        if html_part: pass
+        else:
+            html_part = tmpl_content
         return html_part
 
     def resolve_template(self, template):
