@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 from collections import namedtuple
 from contextlib import contextmanager
 
+from django.conf import settings
 from django.http import QueryDict, HttpResponse
 from django.urls import Resolver404, resolve
 from django.utils.functional import SimpleLazyObject
@@ -78,21 +79,8 @@ UrlMatch = namedtuple('UrlMatch', 'url match')
 
 class IntercoolerQueryDict(QueryDict):
     """
-    Provide standard way to access Intercooler data regardless HTTP method.
+    This is proxy to access Intercooler data regardless HTTP method.
     """
-    _source = None
-
-    def __init__(self, source, *args, **kwargs):
-        super(IntercoolerQueryDict, self).__init__(*args, **kwargs)
-        self._source = source
-
-    def get(self, key, default=None):
-        result = default
-        try:
-            result = self._source[key]
-        except KeyError:
-            result = getattr(self, '_' + key, default)
-        return result
 
     @property
     def url(self):
@@ -109,23 +97,6 @@ class IntercoolerQueryDict(QueryDict):
         return UrlMatch(url, match)
 
     current_url = url
-
-    @property
-    def changed_method(self):
-        try:
-            return self._changed_method
-        except AttributeError:
-            return False
-
-    @changed_method.setter
-    def changed_method(self, value):
-        self._changed_method = value
-
-    @changed_method.deleter
-    def changed_method(self):
-        try:
-            del self._changed_method
-        except AttributeError: pass
 
     @property
     def element(self):
@@ -152,15 +123,6 @@ class IntercoolerQueryDict(QueryDict):
     def prompt_value(self):
         return self.get('ic-prompt-value', None)
 
-    def dict(self):
-        try:
-            self._changed_method
-            result = self._source.copy()
-            result['changed_method'] = self._changed_method
-        except AttributeError:
-            result = self._source
-        return result
-
     def __repr__(self):
         props = ('id', 'request', 'target_id', 'element', 'trigger',
                  'prompt_value', 'url')
@@ -178,7 +140,14 @@ def intercooler_data(self):
         query_params = self.GET
     else:
         query_params = self.POST
-    ic_qd = IntercoolerQueryDict(source=query_params, encoding=self.encoding)
+
+    # Make mutable copy
+    # ic_qd = IntercoolerQueryDict(query_params, encoding=self.encoding)
+    # Just cast needed class to existing object
+    # https://stackoverflow.com/a/3464154/4763528
+    ic_qd = query_params
+    ic_qd.__class__ = IntercoolerQueryDict
+
     ic_qd.changed_method = getattr(self, 'changed_method', False)
     self._processed_intercooler_data = ic_qd
     return ic_qd
