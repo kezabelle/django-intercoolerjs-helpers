@@ -82,7 +82,9 @@ def test_intercooler_data(rf, ic_mw):
     assert data.trigger == ('triggered_by_html_name', 'triggered_by_id')
     assert data.prompt_value == 'undocumented'
     assert data._mutable is False
-    assert data.dict() == querystring_data
+    expecting = request.GET.copy()
+    expecting.update({'changed_method': False})
+    assert data.dict() == expecting
     # ensure that after calling the property (well, SimpleLazyObject)
     # the request has cached the data structure to an attribute.
     request._processed_intercooler_data
@@ -99,7 +101,7 @@ def test_intercooler_data_special_url(rf, ic_mw):
     url = urlparse('')
     assert request.intercooler_data.current_url == (url, None)
 
-def test_intercooler_data_removes_data_from_GET(rf, ic_mw):
+def test_intercooler_data_not_removes_data_from_GET(rf, ic_mw):
     querystring_data = {
         'ic-id': '3',
         'ic-request': 'true',
@@ -120,13 +122,19 @@ def test_intercooler_data_removes_data_from_GET(rf, ic_mw):
     ic_mw.process_request(request)
     assert len(request.GET) == 10
     url = urlparse('/lol/')
-    assert request.intercooler_data.current_url == (url, None)
-    # After evaluation, only _method should be left.
-    assert len(request.GET) == 1
-
-
-# TODO : test removes data from POST
-
+    data = request.intercooler_data
+    assert data.current_url == (url, None)
+    # Should not change any requesting data
+    expecting = request.GET.copy()
+    expecting.update({'changed_method': False})
+    assert data.dict() == expecting
+    del data.changed_method
+    expecting = request.GET.copy()
+    assert data.dict() == expecting
+    # Still can get changed_method attribute
+    assert data.changed_method == False
+    # Still can delete changed_method attribute
+    del data.changed_method
 
 def test_http_method_override_via_querystring(rf, http_method_mw):
     request = rf.post('/?_method=patch', HTTP_X_REQUESTED_WITH='XMLHttpRequest')

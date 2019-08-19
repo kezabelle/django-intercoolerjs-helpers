@@ -77,6 +77,23 @@ UrlMatch = namedtuple('UrlMatch', 'url match')
 
 
 class IntercoolerQueryDict(QueryDict):
+    """
+    Provide standard way to access Intercooler data regardless HTTP method.
+    """
+    _source = None
+
+    def __init__(self, source, *args, **kwargs):
+        super(IntercoolerQueryDict, self).__init__(*args, **kwargs)
+        self._source = source
+
+    def get(self, key, default=None):
+        result = default
+        try:
+            result = self._source[key]
+        except KeyError:
+            result = getattr(self, '_' + key, default)
+        return result
+
     @property
     def url(self):
         url = self.get('ic-current-url', None)
@@ -92,6 +109,23 @@ class IntercoolerQueryDict(QueryDict):
         return UrlMatch(url, match)
 
     current_url = url
+
+    @property
+    def changed_method(self):
+        try:
+            return self._changed_method
+        except AttributeError:
+            return False
+
+    @changed_method.setter
+    def changed_method(self, value):
+        self._changed_method = value
+
+    @changed_method.deleter
+    def changed_method(self):
+        try:
+            del self._changed_method
+        except AttributeError: pass
 
     @property
     def element(self):
@@ -118,6 +152,15 @@ class IntercoolerQueryDict(QueryDict):
     def prompt_value(self):
         return self.get('ic-prompt-value', None)
 
+    def dict(self):
+        try:
+            self._changed_method
+            result = self._source.copy()
+            result['changed_method'] = self._changed_method
+        except AttributeError:
+            result = self._source
+        return result
+
     def __repr__(self):
         props = ('id', 'request', 'target_id', 'element', 'trigger',
                  'prompt_value', 'url')
@@ -131,35 +174,12 @@ def intercooler_data(self):
     try:
         return self._processed_intercooler_data
     except AttributeError: pass
-    IC_KEYS = ['ic-current-url', 'ic-element-id', 'ic-element-name',
-               'ic-id', 'ic-prompt-value', 'ic-target-id',
-               'ic-trigger-id', 'ic-trigger-name', 'ic-request']
-    ic_qd = IntercoolerQueryDict('', encoding=self.encoding)
     if self.method in ('GET', 'HEAD', 'OPTIONS'):
         query_params = self.GET
     else:
         query_params = self.POST
-    query_keys = tuple(query_params.keys())
-    for ic_key in IC_KEYS:
-        if ic_key in query_keys:
-            # emulate how .get() behaves, because pop returns the
-            # whole shebang.
-            # For a little while, we need to pop data out of request.GET
-            with _mutate_querydict(query_params) as REQUEST_DATA:
-                try:
-                    removed = REQUEST_DATA.pop(ic_key)[-1]
-                except IndexError: # pragma: no cover, for safe guard only
-                    removed = []
-            with _mutate_querydict(ic_qd) as IC_DATA:
-                IC_DATA.update({ic_key: removed})
-    # Don't pop these ones off, so that decisions can be made for
-    # handling _method
-    ic_request = query_params.get('_method')
-    with _mutate_querydict(ic_qd) as IC_DATA:
-        IC_DATA.update({'_method': ic_request})
-    # If HttpMethodOverride is in the middleware stack, this may
-    # return True.
-    IC_DATA.changed_method = getattr(self, 'changed_method', False)
+    ic_qd = IntercoolerQueryDict(source=query_params, encoding=self.encoding)
+    ic_qd.changed_method = getattr(self, 'changed_method', False)
     self._processed_intercooler_data = ic_qd
     return ic_qd
 
@@ -169,7 +189,6 @@ class IntercoolerData(MiddlewareMixin):
         request.maybe_intercooler = _maybe_intercooler.__get__(request)
         request.is_intercooler = _is_intercooler.__get__(request)
         request.intercooler_data = SimpleLazyObject(intercooler_data.__get__(request))
-
 
 
 class IntercoolerRedirector(MiddlewareMixin):
