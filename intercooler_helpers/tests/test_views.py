@@ -17,7 +17,7 @@ def test_post_without_ic(client):
     response = client.post(urls.reverse('ic_dispatch'))
     assert response.content.decode('utf-8') == 'In POST'
 
-@pytest.mark.parametrize("target_id", ['test_class', 'new_target'])
+@pytest.mark.parametrize("target_id", ['test_class', 'target_1', 'target_2'])
 def test_post_ic_get_html_part(client, target_id):
     data = {
             'ic-request': 'true',

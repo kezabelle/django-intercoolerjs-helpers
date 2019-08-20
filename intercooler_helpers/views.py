@@ -1,4 +1,5 @@
 import re
+from lxml import etree
 
 from django import http
 from django.core import exceptions
@@ -7,9 +8,16 @@ from django.utils.decorators import classonlymethod
 from django.views.generic import base as base_views, edit as edit_views
 
 import pyquery
+from cssselect import parser as css_parser
 
 
 class ICTemplateResponse(response.TemplateResponse):
+    '''
+    This create response from part or full template, depends on different types
+    of target id.
+
+    target_map is in form of {'target_*': 'target_{{ tag }}'}
+    '''
     target_map = {}
 
     @property
@@ -17,9 +25,17 @@ class ICTemplateResponse(response.TemplateResponse):
         return self._request.intercooler_data
 
     def get_target_id(self):
-        target_id = self.ic_data.target_id
+        '''
+        This return mapped (if there is any) target id. It tries to use
+        matched target id from dispatch. If fail then use target id
+        from intercooler data.
+        '''
         try:
-            return self.target_map[target_id]
+            target_id = self.ic_data.matched_target
+        except AttributeError:
+            target_id = self.ic_data.target_id
+        try:
+            target_id = self.target_map[target_id]
         except KeyError: pass
         return target_id
 
@@ -30,12 +46,22 @@ class ICTemplateResponse(response.TemplateResponse):
         '''
         with open(file_name) as tmpl_file:
             tmpl_content = tmpl_file.read()
+        print('extract_html_part', find)
         pq = pyquery.PyQuery(tmpl_content)
-        html_part = pq(find).html()
-        if html_part: pass
-        else:
-            html_part = tmpl_content
-        return html_part
+        # for s in '{}':
+        #     find = find.replace(s, '\\' + s)
+        html_part = None
+        try:
+            html_part = pq(find).html()
+        except css_parser.SelectorSyntaxError:
+            try:
+                node = next(node for node in pq.find('*')
+                        if '#' + node.get('id', '') == find)
+                html_part = etree.tostring(node, pretty_print=True)
+            except StopIteration: pass
+        result = html_part or tmpl_content
+        print('"%s"' % result)
+        return result
 
     def resolve_template(self, template):
         '''
@@ -98,17 +124,18 @@ class ICDispatchMixin(base_views.View):
         def match(first, second):
             if not first or first == second:
                 return True
-            esc_first = re.escape(first).replace('\\*', '.*')
+            esc_first = re.escape(first).replace(r'\*', '.*')
             # print('%r <> %r' % (esc_first, second))
             return re.match(esc_first, str(second))
         try:
-            method_name = next(method_name
+            target, method_name = next((target, method_name)
                     for method, trigger, target, method_name in self.ic_tuples
                     if match(method, req_method)
                     and match(trigger, req_trigger)
                     and match(target, req_target)
                     )
             method = getattr(self, method_name)
+            self.ic_data.matched_target = target
             # Not catch AttributeError for developer to know what is the wrong
             # method name
         except StopIteration: pass

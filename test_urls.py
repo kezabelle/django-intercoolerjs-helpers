@@ -111,7 +111,7 @@ class ICView(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin):
     ic_tuples = [
             ('get', None, 'test_class', 'get_html_part'),
             ('post', 'post-btn', 'test_class', 'post_message'),
-            ('post', 'post-btn', 'new_target', 'post_message'),
+            ('post', 'post-btn', 'target_*', 'post_message'),
             ('get', 'post-btn', None, 'test_full_template'),
             ]
 
@@ -182,7 +182,8 @@ urlpatterns = [
     url('^html_part/$', html_part, kwargs={'show_details': False},
         name='html_part_hide'),
     url('^ic_dispatch/$', ICView.as_view(target_map={
-        'new_target': 'test_class',
+        'target_*': 'target_{{ forloop.count }}',
+        # Worked: 'target_*': 'target_forloop_count',
         }), name='ic_dispatch'),
     url('^ic_update/$', ICUpdate.as_view(
         ic_tuples=[
