@@ -63,6 +63,7 @@ setup(
     install_requires=[
         "Django>=1.8",
         "django-intercoolerjs>=1.1.0.0",
+        "lxml>=4.4.0",
     ],
     tests_require=[
         "pytest-cov>=1.8",
