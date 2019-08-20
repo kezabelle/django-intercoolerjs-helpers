@@ -1,5 +1,4 @@
 import re
-from lxml import etree
 
 from django import http
 from django.core import exceptions
@@ -7,8 +6,7 @@ from django.template import engines, response
 from django.utils.decorators import classonlymethod
 from django.views.generic import base as base_views, edit as edit_views
 
-import pyquery
-from cssselect import parser as css_parser
+from lxml import etree
 
 
 class ICTemplateResponse(response.TemplateResponse):
@@ -58,16 +56,20 @@ class ICTemplateResponse(response.TemplateResponse):
         '''
         xpath = self.__class__.build_xpath(attrbs={'id': find})
         with open(file_name) as tmpl_file:
-            tmpl_content = tmpl_file.read()
+            root = etree.fromstring(tmpl_file.read(), etree.HTMLParser())
         # print('extract_html_part', find)
         html_part = None
-        pq = pyquery.PyQuery(tmpl_content)
-        root = pq.root
-        if root:
-            html_part = root.find(xpath)
-        else: pass
-        result = (tmpl_content if html_part is None
-                else etree.tostring(html_part))
+        # If root is None, something is wrong so developer need to know
+        html_part = root.find(xpath)
+        # with_tail is to remove django template tag as tail of found html tag
+        # result = (tmpl_content if html_part is None
+        #         else etree.tostring(html_part, with_tail=False))
+        # FutureWarning: The behavior of this method will change in future
+        # versions. Use specific 'len(elem)' or 'elem is not None' test
+        # instead.
+        # result = html_part or etree.tostring(html_part, with_tail=False)
+        result = (None if html_part is None
+                else etree.tostring(html_part, with_tail=False))
         # print('"%s"' % result)
         return result
 
@@ -80,14 +82,12 @@ class ICTemplateResponse(response.TemplateResponse):
         template_obj = super(ICTemplateResponse, self
                 ).resolve_template(template)
         target_id = self._request.is_intercooler() and self.get_target_id()
-        if target_id: pass
-        else:
-            return template_obj
-
-        html_part = self.extract_html_part(
-                str(template_obj.origin), find=target_id)
-        engine = engines[template_obj.backend.name]
-        template_obj = engine.from_string(html_part)
+        html_part = self.extract_html_part(str(template_obj.origin),
+                find=target_id) if target_id else None
+        if html_part:
+            engine = engines[template_obj.backend.name]
+            template_obj = engine.from_string(html_part)
+        else: pass
         return template_obj
 
 
