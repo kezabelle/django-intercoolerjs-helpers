@@ -96,10 +96,10 @@
   <input id="input_message" name="message" placeholder="Input some thing then post" />
   <a id="post-btn" class="btn btn-primary" ic-post-to="{% url 'ic_dispatch' %}" ic-include="#input_message" ic-target="#test_class"><span>Post</span></a>
   <span id="test_class"><strong>{{ message }}</strong></span>
-  {% for message in messages %}
+  <dj>{% for message in messages %}</dj>
   <span id="target_{{ forloop.count }}"><strong>{{ message }}</strong></span>
   <span id="target_forloop_count"><strong>{{ message }}</strong></span>
-  {% endfor message %}
+  <dj>{% endfor message %}</dj>
 </div>
 <hr>
 

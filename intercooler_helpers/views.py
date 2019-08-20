@@ -39,28 +39,36 @@ class ICTemplateResponse(response.TemplateResponse):
         except KeyError: pass
         return target_id
 
-    def extract_html_part(self, file_name, find):
+    @classonlymethod
+    def build_xpath(cls, relative='.//*', attrbs={'id': None}):
+        '''
+        This create xpath using relative path as starting point and attribute dict
+        as criteria.
+        '''
+        # Use sorted to make sure all test times have same result
+        criteria = ' and '.join(['@%s="%s"' % (key, value)
+            for key, value in sorted(attrbs.items())])
+        criteria = ('[%s]' % criteria) if criteria else ''
+        return '%s%s' % (relative, criteria)
+
+    def extract_html_part(self, file_name, find=None):
         '''
         This find the element that has find string then extract the part from
         html file.
         '''
+        xpath = self.__class__.build_xpath(attrbs={'id': find})
         with open(file_name) as tmpl_file:
             tmpl_content = tmpl_file.read()
-        print('extract_html_part', find)
-        pq = pyquery.PyQuery(tmpl_content)
-        # for s in '{}':
-        #     find = find.replace(s, '\\' + s)
+        # print('extract_html_part', find)
         html_part = None
-        try:
-            html_part = pq(find).html()
-        except css_parser.SelectorSyntaxError:
-            try:
-                node = next(node for node in pq.find('*')
-                        if '#' + node.get('id', '') == find)
-                html_part = etree.tostring(node, pretty_print=True)
-            except StopIteration: pass
-        result = html_part or tmpl_content
-        print('"%s"' % result)
+        pq = pyquery.PyQuery(tmpl_content)
+        root = pq.root
+        if root:
+            html_part = root.find(xpath)
+        else: pass
+        result = (tmpl_content if html_part is None
+                else etree.tostring(html_part))
+        # print('"%s"' % result)
         return result
 
     def resolve_template(self, template):
@@ -77,7 +85,7 @@ class ICTemplateResponse(response.TemplateResponse):
             return template_obj
 
         html_part = self.extract_html_part(
-                str(template_obj.origin), '#' + target_id)
+                str(template_obj.origin), find=target_id)
         engine = engines[template_obj.backend.name]
         template_obj = engine.from_string(html_part)
         return template_obj

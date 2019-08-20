@@ -17,7 +17,16 @@ def test_post_without_ic(client):
     response = client.post(urls.reverse('ic_dispatch'))
     assert response.content.decode('utf-8') == 'In POST'
 
-@pytest.mark.parametrize("target_id", ['test_class', 'target_1', 'target_2'])
+@pytest.mark.parametrize('pair', [
+    ({'id': 'test'}, './/*[@id="test"]'),
+    ({'id': 'test', 'name': 'test_name'},
+        './/*[@id="test" and @name="test_name"]'),
+    ])
+def test_build_xpath(pair):
+    xpath = views.ICTemplateResponse.build_xpath(attrbs=pair[0])
+    assert xpath == pair[1]
+
+@pytest.mark.parametrize('target_id', ['test_class', 'target_1', 'target_2'])
 def test_post_ic_get_html_part(client, target_id):
     data = {
             'ic-request': 'true',
