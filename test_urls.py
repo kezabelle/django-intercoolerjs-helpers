@@ -114,9 +114,11 @@ class ICView(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin):
             ('post', 'post-btn', 'target_*', 'post_message'),
             ('get', 'post-btn', None, 'test_full_template'),
             ]
+    target_map = {'target_*': 'target_{{ forloop.count }}'}
 
     def get(self, request, *args, **kwargs):
-        return HttpResponse('In GET')
+        context = {'message': 'In GET'}
+        return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         return HttpResponse('In POST')
@@ -134,7 +136,7 @@ class ICView(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin):
         return self.render_to_response(context)
 
     def test_full_template(self, request, *args, **kwargs):
-        context = {}
+        context = {'message': 'In Full Template'}
         return self.render_to_response(context)
 
 
@@ -181,15 +183,13 @@ urlpatterns = [
         name='html_part_show'),
     url('^html_part/$', html_part, kwargs={'show_details': False},
         name='html_part_hide'),
-    url('^ic_dispatch/$', ICView.as_view(target_map={
-        'target_*': 'target_{{ forloop.count }}',
-        # Worked: 'target_*': 'target_forloop_count',
-        }), name='ic_dispatch'),
+    url('^ic_dispatch/$', ICView.as_view(), name='ic_dispatch'),
     url('^ic_update/$', ICUpdate.as_view(
         ic_tuples=[
             ('get', 'trigger_id', 'target_id', 'action'),
             ('post', 'trigger_id', 'target_id', 'check_form'),
             ],
+        target_map={'target_id': 'take_over'},
         ), name='ic_update'),
     url('^$', root, name='root'),
 ]

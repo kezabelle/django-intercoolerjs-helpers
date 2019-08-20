@@ -11,7 +11,7 @@ from intercooler_helpers import views
 def test_get_without_ic(client):
     response = client.get(urls.reverse('ic_dispatch'))
     # print(response, '\n', *dir(response), sep='\t')
-    assert response.content.decode('utf-8') == 'In GET'
+    assert 'In GET' in response.content.decode('utf-8')
 
 def test_post_without_ic(client):
     response = client.post(urls.reverse('ic_dispatch'))
@@ -49,7 +49,7 @@ def test_get_ic_not_match_target(client):
     response = client.get(urls.reverse('ic_dispatch'), data=data,
             HTTP_X_IC_REQUEST="true", HTTP_X_REQUESTED_WITH='XMLHttpRequest')
     content = response.content.decode('utf-8')
-    assert content == 'In GET'
+    assert 'In GET' in content
 
 def test_get_ic_without_target_id_has_full_template(client):
     data = {
@@ -59,6 +59,8 @@ def test_get_ic_without_target_id_has_full_template(client):
     response = client.get(urls.reverse('ic_dispatch'), data=data,
             HTTP_X_IC_REQUEST="true", HTTP_X_REQUESTED_WITH='XMLHttpRequest')
     content = response.content.decode('utf-8')
+    # To make sure the test_full_template is called
+    assert 'Full Template' in content
     assert '<a id="post-btn"' in content
 
 def test_no_method_raise_error(client):

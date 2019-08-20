@@ -62,8 +62,6 @@ class ICTemplateResponse(response.TemplateResponse):
         # If root is None, something is wrong so developer need to know
         html_part = root.find(xpath)
         # with_tail is to remove django template tag as tail of found html tag
-        # result = (tmpl_content if html_part is None
-        #         else etree.tostring(html_part, with_tail=False))
         # FutureWarning: The behavior of this method will change in future
         # versions. Use specific 'len(elem)' or 'elem is not None' test
         # instead.
@@ -81,6 +79,7 @@ class ICTemplateResponse(response.TemplateResponse):
         # super of Python 2.7
         template_obj = super(ICTemplateResponse, self
                 ).resolve_template(template)
+        # raise Exception('resolve_template %s' % self._request.is_intercooler())
         target_id = self._request.is_intercooler() and self.get_target_id()
         html_part = self.extract_html_part(str(template_obj.origin),
                 find=target_id) if target_id else None
@@ -100,7 +99,16 @@ class ICTemplateResponseMixin(base_views.TemplateResponseMixin):
         return self.request.intercooler_data
 
     @classonlymethod
+    def prepare_subclass(cls):
+        if cls.response_class == ICTemplateResponse: pass
+        else:
+            return
+        cls.response_class = type(
+                'ICTR' + cls.__name__, (cls.response_class, ), {})
+
+    @classonlymethod
     def as_view(cls, target_map = {}, **initkwargs):
+        cls.prepare_subclass()
         cls.response_class.target_map = target_map or cls.target_map
         # super of Python 2.7
         return super(ICTemplateResponseMixin, cls).as_view(**initkwargs)
