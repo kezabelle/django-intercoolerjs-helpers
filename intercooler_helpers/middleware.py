@@ -4,18 +4,12 @@ from __future__ import absolute_import, unicode_literals
 from collections import namedtuple
 from contextlib import contextmanager
 
+from django.conf import settings
 from django.http import QueryDict, HttpResponse
-try:
-    from django.urls import Resolver404, resolve
-except ImportError:  # Django <1.10
-    from django.core.urlresolvers import Resolver404, resolve
+from django.urls import Resolver404, resolve
 from django.utils.functional import SimpleLazyObject
 from django.utils.six.moves.urllib.parse import urlparse
-try:
-    from django.utils.deprecation import MiddlewareMixin
-except ImportError:  # < Django 1.10
-    class MiddlewareMixin(object):
-        pass
+from django.utils.deprecation import MiddlewareMixin
 
 
 __all__ = ['IntercoolerData', 'HttpMethodOverride']
@@ -30,11 +24,15 @@ class HttpMethodOverride(MiddlewareMixin):
     with support for newer Django (ie: implements MiddlewareMixin), without
     dropping older versions, I could possibly replace this with that.
     """
+    caring_methods = ['POST']
+    target_methods = {'POST', 'PUT', 'PATCH', 'DELETE'}
+
     def process_request(self, request):
         request.changed_method = False
-        if request.method != 'POST':
+        if request.method in self.caring_methods: pass
+        else:
             return
-        methods = {'GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'}
+        methods = self.target_methods
         potentials = ((request.META, 'HTTP_X_HTTP_METHOD_OVERRIDE'),
                       (request.GET, '_method'),
                       (request.POST, '_method'))
@@ -42,15 +40,19 @@ class HttpMethodOverride(MiddlewareMixin):
             if key in querydict and querydict[key].upper() in methods:
                 newmethod = querydict[key].upper()
                 # Don't change the method data if the calling method was
-                # the same as the indended method.
+                # the same as the intended method.
                 if newmethod == request.method:
                     return
+                else: pass
                 request.original_method = request.method
                 if hasattr(querydict, '_mutable'):
                     with _mutate_querydict(querydict):
                         querydict.pop(key)
-                if not hasattr(request, newmethod):
-                    setattr(request, newmethod, request.POST)
+                # ```This could not be tested so may be never happen!
+                # if hasattr(request, newmethod): pass
+                # else:
+                setattr(request, newmethod, request.POST)
+                # ```
                 request.method = newmethod
                 request.changed_method = True
                 return
@@ -76,6 +78,10 @@ UrlMatch = namedtuple('UrlMatch', 'url match')
 
 
 class IntercoolerQueryDict(QueryDict):
+    """
+    This is proxy to access Intercooler data regardless HTTP method.
+    """
+
     @property
     def url(self):
         url = self.get('ic-current-url', None)
@@ -127,38 +133,24 @@ class IntercoolerQueryDict(QueryDict):
 
 
 def intercooler_data(self):
-    if not hasattr(self, '_processed_intercooler_data'):
-        IC_KEYS = ['ic-current-url', 'ic-element-id', 'ic-element-name',
-                   'ic-id', 'ic-prompt-value', 'ic-target-id',
-                   'ic-trigger-id', 'ic-trigger-name', 'ic-request']
-        ic_qd = IntercoolerQueryDict('', encoding=self.encoding)
-        if self.method in ('GET', 'HEAD', 'OPTIONS'):
-            query_params = self.GET
-        else:
-            query_params = self.POST
-        query_keys = tuple(query_params.keys())
-        for ic_key in IC_KEYS:
-            if ic_key in query_keys:
-                # emulate how .get() behaves, because pop returns the
-                # whole shebang.
-                # For a little while, we need to pop data out of request.GET
-                with _mutate_querydict(query_params) as REQUEST_DATA:
-                    try:
-                        removed = REQUEST_DATA.pop(ic_key)[-1]
-                    except IndexError:
-                        removed = []
-                with _mutate_querydict(ic_qd) as IC_DATA:
-                    IC_DATA.update({ic_key: removed})
-        # Don't pop these ones off, so that decisions can be made for
-        # handling _method
-        ic_request = query_params.get('_method')
-        with _mutate_querydict(ic_qd) as IC_DATA:
-            IC_DATA.update({'_method': ic_request})
-        # If HttpMethodOverride is in the middleware stack, this may
-        # return True.
-        IC_DATA.changed_method = getattr(self, 'changed_method', False)
-        self._processed_intercooler_data = ic_qd
-    return self._processed_intercooler_data
+    try:
+        return self._processed_intercooler_data
+    except AttributeError: pass
+    if self.method in ('GET', 'HEAD', 'OPTIONS'):
+        query_params = self.GET
+    else:
+        query_params = self.POST
+
+    # Make mutable copy
+    # ic_qd = IntercoolerQueryDict(query_params, encoding=self.encoding)
+    # Just cast needed class to existing object
+    # https://stackoverflow.com/a/3464154/4763528
+    ic_qd = query_params
+    ic_qd.__class__ = IntercoolerQueryDict
+
+    ic_qd.changed_method = getattr(self, 'changed_method', False)
+    self._processed_intercooler_data = ic_qd
+    return ic_qd
 
 
 class IntercoolerData(MiddlewareMixin):
@@ -166,7 +158,6 @@ class IntercoolerData(MiddlewareMixin):
         request.maybe_intercooler = _maybe_intercooler.__get__(request)
         request.is_intercooler = _is_intercooler.__get__(request)
         request.intercooler_data = SimpleLazyObject(intercooler_data.__get__(request))
-
 
 
 class IntercoolerRedirector(MiddlewareMixin):

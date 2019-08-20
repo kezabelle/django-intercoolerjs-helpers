@@ -73,21 +73,36 @@ def test_intercooler_data(rf, ic_mw):
     with pytest.raises(AttributeError):
         request._processed_intercooler_data
     data = request.intercooler_data
+    assert data.id == 3
+    assert data['ic-id'] == '3'
     url = urlparse('/lol/')
     assert request.intercooler_data.current_url == (url, None)
     assert data.element == ('html_name', 'html_id')
-    assert data.id == 3
     assert data.request is True
+    assert data['ic-request'] == 'true'
     assert data.target_id == 'target_html_id'
     assert data.trigger == ('triggered_by_html_name', 'triggered_by_id')
     assert data.prompt_value == 'undocumented'
     assert data._mutable is False
-    assert data.dict() == querystring_data
+    expecting = request.GET.copy()
+    assert data.dict() == expecting.dict()
     # ensure that after calling the property (well, SimpleLazyObject)
     # the request has cached the data structure to an attribute.
     request._processed_intercooler_data
 
-def test_intercooler_data_removes_data_from_GET(rf, ic_mw):
+def test_intercooler_data_special_url(rf, ic_mw):
+    querystring_data = {
+        'ic-request': 'true',
+        'ic-current-url': '  ',
+        '_method': 'POST',
+    }
+    request = rf.post('/', data=querystring_data,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    ic_mw.process_request(request)
+    url = urlparse('')
+    assert request.intercooler_data.current_url == (url, None)
+
+def test_intercooler_data_not_removes_data_from_GET(rf, ic_mw):
     querystring_data = {
         'ic-id': '3',
         'ic-request': 'true',
@@ -108,13 +123,11 @@ def test_intercooler_data_removes_data_from_GET(rf, ic_mw):
     ic_mw.process_request(request)
     assert len(request.GET) == 10
     url = urlparse('/lol/')
-    assert request.intercooler_data.current_url == (url, None)
-    # After evaluation, only _method should be left.
-    assert len(request.GET) == 1
-
-
-# TODO : test removes data from POST
-
+    data = request.intercooler_data
+    assert data.current_url == (url, None)
+    # Should not change any requesting data
+    expecting = request.GET.copy()
+    assert data.dict() == expecting.dict()
 
 def test_http_method_override_via_querystring(rf, http_method_mw):
     request = rf.post('/?_method=patch', HTTP_X_REQUESTED_WITH='XMLHttpRequest')
@@ -123,6 +136,17 @@ def test_http_method_override_via_querystring(rf, http_method_mw):
     assert request.method == 'PATCH'
     assert request.original_method == 'POST'
     assert request.PATCH is request.POST
+
+def test_http_method_override_via_querystring_same_method(rf, http_method_mw):
+    test_data = {'test': 'test'}
+    request = rf.post('/?_method=post', data=test_data,
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    http_method_mw.process_request(request)
+    assert request.changed_method is False
+    assert request.method == 'POST'
+    assert hasattr(request, 'original_method') == False
+    test_data['test'] = [test_data['test']]
+    assert request.POST == test_data
 
 def test_http_method_override_via_postdata(rf, http_method_mw):
     request = rf.post('/', data={'_method': 'PUT'}, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
@@ -148,3 +172,19 @@ def test_intercooler_querydict_copied_change_method_from_request(rf, http_method
     ic_mw.process_request(request)
     assert request.changed_method is True
     assert request.intercooler_data.changed_method is True
+
+
+def test_intercooler_querydict_repr(rf, http_method_mw, ic_mw):
+    request = rf.post('/', data={'ic-request': 'true'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+    http_method_mw.process_request(request)
+    ic_mw.process_request(request)
+    ic_data = request.intercooler_data
+    # To get actual instance from SimpleLazyObject class
+    assert ic_data.request == True
+    expecting = ('<SimpleLazyObject: <IntercoolerQueryDict: id=0,'
+            ' request=True, target_id=None,'
+            ' element=NameId(name=None, id=None),'
+            ' trigger=NameId(name=None, id=None),'
+            ' prompt_value=None, url=UrlMatch(url=None, match=None)>>')
+    assert repr(ic_data) == expecting

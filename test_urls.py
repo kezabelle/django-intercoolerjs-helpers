@@ -14,6 +14,8 @@ try:
 except ImportError:  # Django <1.10
     from django.core.urlresolvers import reverse
 
+from intercooler_helpers import views as ic_views
+
 
 def _page_data():
     return tuple(str(uuid4()) for x in range(0, 10))
@@ -51,6 +53,8 @@ class TestForm(Form):
     field = CharField()
     number = IntegerField(max_value=10, min_value=5)
 
+    def save(self): pass
+
 
 def form(request):
     template = "form.html"
@@ -59,7 +63,6 @@ def form(request):
         return redirect(reverse('redirected'))
     context = {'form': _form}
     return TemplateResponse(request, template=template, context=context)
-
 
 
 def polling_stop(request):
@@ -94,6 +97,70 @@ def infinite_scrolling(request):
     return TemplateResponse(request, template=template, context=context)
 
 
+def html_part(request, show_details=False):
+    template = "demo_project.html"
+    context = {
+        'show_details': show_details,
+    }
+    return ic_views.ICTemplateResponse(
+            request, template=template, context=context)
+
+
+class ICView(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin):
+    template_name = "demo_project.html"
+    ic_tuples = [
+            ('get', None, 'test_class', 'get_html_part'),
+            ('post', 'post-btn', 'test_class', 'post_message'),
+            ('post', 'post-btn', 'target_*', 'post_message'),
+            ('get', 'post-btn', None, 'test_full_template'),
+            ]
+    target_map = {'target_*': 'target_{{ forloop.count }}'}
+
+    def get(self, request, *args, **kwargs):
+        context = {'message': 'In GET'}
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        return HttpResponse('In POST')
+
+    def get_html_part(self, request, *args, **kwargs):
+        context = {
+            'message': 'Dispatched to get',
+        }
+        return self.render_to_response(context)
+
+    def post_message(self, request, *args, **kwargs):
+        context = {
+            'message': 'Dispatched to post: ' + request.POST['message'],
+        }
+        return self.render_to_response(context)
+
+    def test_full_template(self, request, *args, **kwargs):
+        context = {'message': 'In Full Template'}
+        return self.render_to_response(context)
+
+
+class ICTRNewMap(ic_views.ICTemplateResponse):
+    target_map = {'target_id': 'mapped_id'}
+
+
+class ICUpdate(ic_views.ICTemplateResponseMixin, ic_views.ICDispatchMixin,
+        ic_views.ICUpdateView):
+    response_class = ICTRNewMap
+    template_name = "form.html"
+
+    def check_form(self, request, *args, **kwargs):
+        _form = TestForm(request.POST or None)
+        return self.form_valid(_form)
+        # if self.form_valid(_form):
+        #     return redirect(reverse('redirected'))
+        # context = {'form': _form}
+        # return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        return self.check_form(request, *args, **kwargs)
+
+
 def root(request):
     template = "demo_project.html"
     context = {
@@ -112,6 +179,18 @@ urlpatterns = [
     url('^polling/start/$', polling_start, name='polling_start'),
     url('^polling/$', polling, name='polling'),
     url('^infinite/scrolling/$', infinite_scrolling, name='infinite_scrolling'),
+    url('^html_part/show/$', html_part, kwargs={'show_details': True},
+        name='html_part_show'),
+    url('^html_part/$', html_part, kwargs={'show_details': False},
+        name='html_part_hide'),
+    url('^ic_dispatch/$', ICView.as_view(), name='ic_dispatch'),
+    url('^ic_update/$', ICUpdate.as_view(
+        ic_tuples=[
+            ('get', 'trigger_id', 'target_id', 'action'),
+            ('post', 'trigger_id', 'target_id', 'check_form'),
+            ],
+        target_map={'target_id': 'take_over'},
+        ), name='ic_update'),
     url('^$', root, name='root'),
 ]
 

@@ -1,6 +1,13 @@
 htmlcov
 dist
 *.pyo
-*.pyc.coverage
+*.pyc
+.coverage
+__pycache__
 *.egg*
 *.sqlite3
+/.tox
+/env
+/venv
+.*.sw?
+.*~
